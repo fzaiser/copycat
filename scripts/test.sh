@@ -46,7 +46,11 @@ staged=$out/staged
 rm -rf "$staged"
 if err=$(scripts/stage.sh "$staged/preview/copycat/$version" 2>&1); then ok "scripts/stage.sh"; else bad "scripts/stage.sh" "$err"; fi
 for f in docs/*.typ; do compile "$f" "$(basename "${f%.typ}")" "$f" --package-path "$staged"; done
-compile "docs/example.typ (dark)" example-dark docs/example.typ --package-path "$staged" --input theme=dark
+for f in docs/figures/*.typ; do
+  name=$(basename "${f%.typ}")
+  [ "$name" = setup ] && continue
+  compile "$f" "figure-$name" "$f" --package-path "$staged"
+done
 
 for f in tests/fail/*.typ; do
   want=$(sed -n '1s#^// error: ##p' "$f")
@@ -63,12 +67,19 @@ done
 awk '/^```typst/ { if (++n == 1) { on = 1; next } } /^```$/ { on = 0 } on' README.md > "$out/readme-quickstart.typ"
 compile "README quick start" readme-quickstart "$out/readme-quickstart.typ" --package-path "$staged"
 
-imports=$(grep -ohE '@preview/copycat:[0-9]+\.[0-9]+\.[0-9]+' README.md docs/*.typ | sort -u)
+imports=$(grep -ohE '@preview/copycat:[0-9]+\.[0-9]+\.[0-9]+' README.md docs/*.typ docs/figures/*.typ | sort -u)
 if [ "$imports" = "@preview/copycat:$version" ]; then
   ok "README and docs import copycat $version"
 else
   bad "imports" "README.md and docs/ must import copycat $version, found:"$'\n'"$imports"
 fi
+
+# Relative links in the README must exist in the checkout; stage.sh turns the
+# ones that are not part of the package into repository links.
+missing=$(grep -oE '\]\([^)#:[:space:]]+\)' README.md | sed 's/^](//; s/)$//' | sort -u | while read -r path; do
+  [ -e "$path" ] || echo "$path"
+done)
+if [ -z "$missing" ]; then ok "README links resolve"; else bad "README links" "not found:"$'\n'"$missing"; fi
 
 # The lint runs after the compiles above: typst-package-check resolves cetz
 # from the package cache only, which they fill on a fresh machine.

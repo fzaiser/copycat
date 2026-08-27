@@ -3,4 +3,4 @@ ba = "ba"
 
 [files]
 # Typst's SVG export names glyphs by hash.
-extend-exclude = ["docs/*.svg"]
+extend-exclude = ["*.svg"]

@@ -1,39 +1,61 @@
 # Contributing to copycat
 
-## Development
+## Where things are
 
-The library lives in [src/](src/), behind the entrypoint [src/lib.typ](src/lib.typ), which re-exports exactly the documented names.
-[docs/design.md](docs/design.md) explains how the layout works; read it before changing `src/core.typ`.
+| Path | Contents |
+|---|---|
+| `src/` | the library; `lib.typ` re-exports exactly the documented names |
+| `docs/gallery.typ` | one document that shows everything; `gallery.pdf` is its output |
+| `docs/figures/` | the sources of the README figures |
+| `docs/images/` | the README figures, rendered by `scripts/render-docs.sh` |
+| `tests/` | the test suite; `tests/fail/` holds documents that must fail to compile |
+| `scripts/` | the test, rendering and packaging scripts |
+| `ARCHITECTURE.md` | how the layout works; read it before changing `src/core.typ` |
+| `PUBLISHING.md` | how a version is released to Typst Universe |
 
-`scripts/test.sh` runs the whole test suite and needs nothing but `typst`:
+## Running the tests
 
-- `tests/*.typ` and `docs/*.typ` must compile without warnings, and `docs/example.typ` also in its dark variant;
-- every file in `tests/fail/` must fail with the error named on its first line;
-- the README's quick start must compile against the package as a user would import it;
-- every `@preview/copycat:<version>` import in the README and in `docs/` must name the version in `typst.toml`;
-- the submission copy assembled by `scripts/stage.sh` must pass `typst-package-check`, and the sources `typos`.
+`scripts/test.sh` needs nothing but `typst`.
+It checks that
 
-The last two checks are skipped, visibly, when the tools are not installed, and `scripts/test.sh --offline` skips the lints that need network access, such as the check that `repository` is reachable.
-CI runs all of them, on the compiler floor from `typst.toml` and on the current Typst release.
+- `tests/*.typ`, `docs/*.typ` and `docs/figures/*.typ` compile without warnings;
+- every file in `tests/fail/` fails with the error named on its first line;
+- the README's first code block, the quick start, compiles against the package as a user would import it;
+- every `@preview/copycat:<version>` import in the README and under `docs/` names the version in `typst.toml`;
+- every relative link in the README points at an existing file;
+- the submission copy assembled by `scripts/stage.sh` passes `typst-package-check`, and the sources pass `typos`.
+
+The last two checks are skipped, with a notice, when the tools are not installed:
 
 ```sh
 cargo install --git https://github.com/typst/package-check --locked
 brew install typos-cli   # or: cargo install typos-cli
 ```
 
-The files in `docs/` import `@preview/copycat:<version>` rather than `../src/lib.typ`, so that they can be copied as they are.
-`scripts/test.sh` compiles them, and the README's quick start, against the submission copy that `scripts/stage.sh` assembles in `tests/out/staged`, so anything missing from that copy fails there.
-`scripts/render-docs.sh` instead links the checkout itself into `tests/out/packages`, which is also the path to pass when working on a document in `docs/` interactively:
+`scripts/test.sh --offline` skips the lints that need network access, such as the check that `repository` is reachable.
+CI runs everything on the compiler floor from `typst.toml` and on the current Typst release.
+
+## Working on the docs
+
+The files under `docs/` import `@preview/copycat:<version>` rather than `../src/lib.typ`, so that they work unchanged when copied into a document.
+The tests compile them against the submission copy that `scripts/stage.sh` assembles in `tests/out/staged`, so anything missing from that copy fails there.
+
+To work on a document interactively, link the checkout into a package path and pass it to `typst`.
+`scripts/render-docs.sh` sets up `tests/out/packages` for this:
 
 ```sh
 typst watch --root . --package-path tests/out/packages docs/gallery.typ
 ```
 
-`scripts/render-docs.sh` regenerates the SVGs and the PDF that the README links to.
-Run it after a change that affects the rendered output and commit the result.
+`scripts/render-docs.sh` regenerates the README figures and `docs/gallery.pdf`.
+Each figure is one page of a file in `docs/figures/`, wrapped in `fig("name", ...)` from `docs/figures/setup.typ`, and is written to `docs/images/name.svg`.
+The script also adds a style block to every SVG that turns black ink white when the reader's colour scheme is dark, which is why the figures leave boxes and triangles unfilled.
+Run the script after any change that affects the rendered output, and commit the result.
 
-To use a checkout from other documents on your machine, `scripts/install-local.sh` links it into Typst's local package directory as `@local/copycat:<version>`.
+## Using a checkout from other documents
+
+`scripts/install-local.sh` links the checkout into Typst's local package directory as `@local/copycat:<version>`, so that other documents on the machine see edits immediately.
 
 ## Releasing
 
-[PUBLISHING.md](PUBLISHING.md) records the registry's rules as they apply to copycat, the pre-submission checklist, and how to submit a version.
+See [PUBLISHING.md](PUBLISHING.md).

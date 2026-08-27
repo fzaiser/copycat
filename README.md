@@ -1,66 +1,307 @@
 # copycat
 
-String diagrams for monoidal categories with copying and discarding, that is, CD categories and in particular Markov categories, drawn in the style of Fritz (2020) and Cho–Jacobs (2019) and built on [CeTZ](https://typst.app/universe/package/cetz).
-The vocabulary is that of process theories: wires carry systems, boxes are processes, states and effects sit at the ends of wires, and diagrams are composed in serial and in parallel.
+String diagrams for Markov categories, and more generally for monoidal categories with copying and discarding, as a [Typst](https://typst.app) package.
+You write a diagram as a term, such as `serial(copy, parallel(discard, wire()))`, and copycat lays it out in the style of Fritz (2020) and Cho–Jacobs (2019), drawing with [CeTZ](https://typst.app/universe/package/cetz).
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/example-dark.svg">
-  <img alt="Diagrams drawn with copycat: a probabilistic program, the counitality law, and copying a product" src="docs/example-light.svg">
-</picture>
+![Three diagrams drawn with copycat: a camera whose photo is kept and also described in text, the law that copying and then discarding one copy is the identity, and copying a product wire](docs/images/overview.svg)
+
+- **Terms, not coordinates.** Wires, boxes, states and effects are composed in series and in parallel; copycat places every element and routes the wires between them.
+- **Made for equations.** A diagram is content whose centre sits on the math axis, so `$ #string-diagram(a) = #string-diagram(b) $` reads as an equation.
+- **Styling at three levels:** the whole diagram, a sub-diagram, or a single element.
+- **Four reading directions:** bottom to top by default, or top to bottom, left to right and right to left.
+- **Extensible:** any CeTZ drawing can become an element.
 
 ## Quick start
 
 ```typst
 #import "@preview/copycat:0.1.0": *
 
-$ #string-diagram(serial(state("Uniform"), wire($[0,1]$), process("Bernoulli"), wire($"Bool"$))) $
+$ #string-diagram(serial(state("Camera"), wire("photo"), process("Describe"), wire("text"))) $
 
 $ #string-diagram(serial(copy, parallel(discard, wire()))) = #string-diagram(wire()) $
 ```
 
-copycat needs Typst 0.14 or newer and downloads CeTZ itself.
+![A camera producing a photo that is described in text, and the equation copy-then-discard equals identity](docs/images/quick-start.svg)
 
-The package exports `string-diagram`, the combinators `serial`, `parallel` and `styled`, the primitives `wire`, `process`, `state`, `effect`, `copy`, `discard`, `swap`, `bundle` and `unbundle`, `primitive` for defining your own, and `default-style`.
-They are meant to be used unqualified, as above.
-`state` is the one name that shadows a Typst builtin; Typst's own stays reachable as `std.state`, or import the names you use explicitly and rename that one: `#import "@preview/copycat:0.1.0": serial, parallel, wire, state as dist`.
-The renderer is deliberately not called `diagram`, which fletcher and lilaq both export.
-If you want the short name, `#let diagram = string-diagram` gives it to you, and most documents wrap it anyway to fix a style once: `#let sd = string-diagram.with(style: (unit: 0.5cm))`.
+The first diagram is read from the bottom up: a camera produces a photo, which is then described in text.
+The second says that copying something and discarding one of the copies is the same as doing nothing.
 
-## Conventions
+copycat needs Typst 0.14 or newer; CeTZ is downloaded automatically.
 
-Diagrams are read **bottom to top** by default: inputs enter at the bottom edge and outputs leave at the top edge.
-The `direction` style key turns the finished diagram to read top to bottom, left to right, or right to left (see [Rendering](#rendering)).
+The wildcard import brings in `string-diagram`, the combinators `serial`, `parallel` and `styled`, the elements `wire`, `process`, `state`, `effect`, `copy`, `discard`, `swap`, `unbundle` and `bundle`, plus `primitive` and `default-style`.
+Two of the names deserve a note:
 
-Layout happens in abstract **units**, and one unit is rendered as `style.unit`.
-Wire slots are one unit apart, and an element with `n` wires on an edge carries them centred within its own width.
+- `state` shadows Typst's builtin, which stays reachable as `std.state`.
+  To keep the builtin, rename on import: `#import "@preview/copycat:0.1.0": serial, parallel, wire, state as dist`.
+- The renderer is called `string-diagram` rather than `diagram`, which fletcher and lilaq already export.
+  Alias it if you like, and fix a style at the same time: `#let sd = string-diagram.with(style: (unit: 1.5em))`.
 
-Every primitive and combinator returns a *diagram value*.
-Its `inputs` and `outputs` fields give the wire counts, which is all a document needs to read from it.
-The remaining fields drive the layout and are described in [docs/design.md](docs/design.md); they are not part of the stable interface.
+## Building blocks
 
-## Primitives
+| Element | Wires | Drawing | Description |
+|---|---|---|---|
+| `wire(label, length: 1, side: "right")` | 1 → 1 | ![a vertical wire labelled X](docs/images/wire.svg) | A wire of `length` units, with an optional label beside it. `wire()` is the identity. |
+| `process(label, inputs: 1, outputs: 1)` | n → m | ![a box labelled f with a wire entering below and leaving above](docs/images/process.svg) | A step with inputs and outputs: a box with the label inside. |
+| `state(label, outputs: 1)` | 0 → m | ![a downward-pointing triangle labelled p with a wire leaving its top edge](docs/images/state.svg) | A source, with outputs only; in a Markov category, a distribution. A triangle pointing down. |
+| `effect(label, inputs: 1)` | n → 0 | ![an upward-pointing triangle labelled e with a wire entering its bottom edge](docs/images/effect.svg) | A sink, with inputs only: the mirror image of `state`. |
+| `copy` | 1 → 2 | ![a wire rising to a dot from which two arms curve up and outwards](docs/images/copy.svg) | A dot with two arms. |
+| `discard` | 1 → 0 | ![a short wire ending in a dot](docs/images/discard.svg) | A wire ending in a dot, or in a ground symbol with the style `discard: (kind: "ground")`. |
+| `swap` | 2 → 2 | ![two wires crossing in an X](docs/images/swap.svg) | Two wires crossing. |
+| `unbundle` | 1 → 2 | ![one wire forking into two without a dot](docs/images/unbundle.svg) | A fork without a dot, to draw a product wire X × Y as two wires. |
+| `bundle` | 2 → 1 | ![two wires merging into one without a dot](docs/images/bundle.svg) | The mirror image of `unbundle`. |
 
-| Call | Wires | Drawing |
+- `copy`, `discard`, `swap`, `unbundle` and `bundle` are values, not functions: write `copy`, not `copy()`.
+- Labels are ordinary content: a string is typeset upright, `$X$` gives math.
+  `wire` also accepts its label as `label: $X$`.
+- Boxes, triangles and wires grow to fit their labels.
+- Sizes are measured in abstract units.
+  Neighbouring wires are one unit apart, and the style key `unit` (`2em` by default) sets how long a unit is on the page.
+- `process`, `state` and `effect` also take `stroke:` and `fill:`, and `wire` a `stroke:`, to restyle that one element; see [Styling](#styling).
+
+Some variants:
+
+| Code | Drawing |
+|---|---|
+| `wire($X$, length: 2, side: "left")` | ![a wire of length 2 with its label on the left](docs/images/wire-long.svg) |
+| `process($f$, inputs: 2, outputs: 3)` | ![a box with two inputs and three outputs](docs/images/process-2-3.svg) |
+| `state($p$, outputs: 2)` | ![a state with two outputs](docs/images/state-2.svg) |
+| `effect($e$, inputs: 2)` | ![an effect with two inputs](docs/images/effect-2.svg) |
+| `process("Describe")` | ![a box that has grown to fit the label Describe](docs/images/process-wide.svg) |
+
+## Composing diagrams
+
+`serial(a, b, ...)` stacks diagrams from bottom to top and connects each one's outputs to the inputs of the next.
+`parallel(a, b, ...)` places diagrams side by side, from left to right.
+
+| Code | Drawing |
+|---|---|
+| `serial(process($f$), process($g$))` | ![f below g](docs/images/serial-fg.svg) |
+| `parallel(process($f$), process($g$))` | ![f beside g](docs/images/parallel-fg.svg) |
+| `serial(wire($X$), process($f$), wire($Y$), process($g$), wire($Z$))` | ![a labelled chain X, f, Y, g, Z](docs/images/chain.svg) |
+
+Both nest freely:
+
+```typst
+serial(
+  copy,
+  parallel(process($f$), process($g$)),
+)
+```
+
+![a copy feeding f and g](docs/images/copy-fg.svg)
+
+- Diagrams read **bottom to top**: inputs enter at the bottom edge and outputs leave at the top edge.
+  The first argument of `serial` is the bottom one.
+- In `serial`, each diagram must have as many outputs as the next one has inputs.
+  `serial(copy, wire())` is an error, since `copy` has two outputs and `wire()` one input.
+- Every diagram has an `inputs` and an `outputs` field with its wire counts.
+- `parallel` centres shorter diagrams vertically and extends their wires to the common edges.
+  A diagram with no outputs, such as `discard`, sits at the bottom edge instead, and one with no inputs, such as a `state`, at the top edge.
+- With a single argument, both combinators return it unchanged; with none, they return the empty diagram.
+
+### How wires are routed
+
+Boxes, triangles and custom elements hold the ends of their wires in place; plain wires and the arms of `copy`, `unbundle` and `bundle` are flexible.
+This is what gives the drawings their hand-drawn look.
+
+A wire follows the element it stands on, so a narrow layer of wires over a wide box stays straight rather than kinked:
+
+```typst
+serial(process("Describe"), wire("text"))
+```
+
+![a labelled wire standing straight on a wide box](docs/images/routing-straight.svg)
+
+A fork arm runs from its dot straight to wherever the next layer needs it:
+
+```typst
+serial(
+  copy,
+  parallel(process("Describe"), wire()),
+)
+```
+
+![a copy whose left arm reaches sideways to a wide box](docs/images/routing-arm.svg)
+
+A wire whose two ends are held at different positions becomes an S-curve over its own length:
+
+```typst
+serial(
+  parallel(process("Crop"), process("Describe")),
+  parallel(wire(), wire()),
+  parallel(process("Describe"), process("Crop")),
+)
+```
+
+![two boxes over two boxes of different widths, connected by S-curved wires](docs/images/routing-sbend.svg)
+
+Only where two rigid elements meet and disagree does `serial` insert a connector band of `bend` units between the layers:
+
+```typst
+serial(
+  parallel(process("Crop"), process("Describe")),
+  parallel(process("Describe"), process("Crop")),
+)
+```
+
+![the same boxes without wires in between, with a short connector band inserted](docs/images/routing-band.svg)
+
+## Labels
+
+| Code | Drawing |
+|---|---|
+| `wire("photo")` | ![a wire labelled with the upright word photo](docs/images/label-string.svg) |
+| `wire($X times Y$)` | ![a wire labelled with the math X times Y](docs/images/label-math.svg) |
+| `parallel(wire("photo"), process("Describe"))` | ![a labelled wire beside a box, with room kept for the label](docs/images/label-beside.svg) |
+| `parallel(wire("photo", side: "left"), process("Describe"))` | ![the same with the label on the left, outside the diagram](docs/images/label-left.svg) |
+
+- A string label is set upright, and math is math.
+- A wire label sits to the right of its wire, and the wire keeps room for it, so a neighbour in a `parallel` is placed after the label.
+  `side: "left"` puts the label on the other side, for instance to keep it outside the diagram.
+- Read sideways, a wire is at least as long as its label.
+- Label size follows the surrounding text, not the diagram's `unit`.
+  Change it with the style key `label.size`.
+
+## Styling
+
+A style is a dictionary of overrides on `default-style`.
+It can be applied at three levels.
+The examples use this program, which keeps a photo and also describes it in text:
+
+```typst
+#let program = serial(
+  state("Camera"),
+  copy,
+  parallel(wire("photo", side: "left"), process("Describe")),
+  parallel(wire(), wire("text")),
+)
+```
+
+The whole diagram, through the `style:` argument of `string-diagram`:
+
+```typst
+#string-diagram(program, style: (stroke: (paint: blue), box: (fill: blue.transparentize(85%))))
+```
+
+![the program drawn in blue, with a tinted box](docs/images/style-whole.svg)
+
+A sub-diagram, through `styled`:
+
+```typst
+#string-diagram(serial(
+  state("Camera"),
+  styled(serial(copy, parallel(wire(), discard)), stroke: (paint: red)),
+  wire("photo"),
+))
+```
+
+![a diagram whose copy-and-discard part is red](docs/images/style-sub.svg)
+
+A single element, through its own `stroke:` and `fill:` arguments:
+
+```typst
+#string-diagram(serial(
+  wire($X$),
+  process($f$, stroke: (paint: blue), fill: blue.transparentize(85%)),
+  wire($Y$, stroke: (dash: "dashed")),
+))
+```
+
+![a blue, tinted box between a plain wire and a dashed one](docs/images/style-element.svg)
+
+`serial` and `parallel` also take a `style:` argument, which restyles the diagram they build: `serial(copy, parallel(wire(), discard), style: (discard: (kind: "ground")))`.
+
+### Style keys
+
+The same diagram, `serial(copy, parallel(discard, process($f$)))`, under a few overrides:
+
+| Style | Drawing |
+|---|---|
+| *(default)* | ![the diagram with the default style](docs/images/keys-default.svg) |
+| `(discard: (kind: "ground"))` | ![with a ground symbol for discard](docs/images/keys-ground.svg) |
+| `(gap: 0.5)` | ![with a wider gap between the factors](docs/images/keys-gap.svg) |
+| `(stroke: (thickness: 1.4pt))` | ![with thicker strokes](docs/images/keys-thickness.svg) |
+| `(dot: (radius: 0.15, height: 0.4))` | ![with larger dots placed higher](docs/images/keys-dot.svg) |
+| `(unit: 1.4em)` | ![at a smaller unit](docs/images/keys-unit.svg) |
+
+Root keys:
+
+| Key | Default | Meaning |
 |---|---|---|
-| `wire(label, length: 1, side: "right")` | 1 → 1 | a vertical wire, `length` units tall, with `label` set beside it. The label may also be passed as `label: ...`. `wire()` is the bare identity. Both ends are free to move sideways, and the label moves with them. |
-| `process(label, inputs: 1, outputs: 1)` | n → m | a process: a white box with `label` inside and short wire stubs above and below, so that boxes stacked by `serial` never touch. |
-| `state(label, outputs: 1)` | 0 → m | a state, i.e. a morphism with no inputs, which in a Markov category is a distribution: a downward-pointing triangle (apex at the bottom) whose outputs leave the flat top edge. |
-| `effect(label, inputs: 1)` | n → 0 | the mirror image of `state`, apex at the top. |
-| `copy` | 1 → 2 | a wire rising to a black dot, from which two arms curve out to the two outputs. |
-| `discard` | 1 → 0 | a wire ending in a black dot, or in a ground symbol if the style's `discard.kind` is `"ground"`. It slides sideways like a wire to sit over whatever it discards, and its dot sits at the same height as a copy's dot (`dot.height`), below every arm crossing the layer. |
-| `swap` | 2 → 2 | two wires crossing. |
-| `unbundle` | 1 → 2 | a fork *without* a dot, for drawing one product wire `X × Y` as two wires. |
-| `bundle` | 2 → 1 | the mirror image of `unbundle`. |
+| `unit` | `2em` | length of one unit on the page; an `em` value scales with the text |
+| `direction` | `"up"` | reading direction: `"up"`, `"down"`, `"right"` or `"left"` |
+| `stroke` | `black + 0.7pt` | base stroke, inherited by every element stroke that is `auto` |
+| `fill` | `white` | fill of boxes and triangles |
+| `inset` | `0.1` | space between a label and the border of its box or triangle |
+| `margin` | `0.1` | space kept free beside a box, a triangle or a wire label, so that neighbours do not touch |
+| `stub` | `0.2` | length of the short wire stubs attached to boxes and triangles |
+| `bend` | `0.5` | height of the connector band that `serial` inserts between rigid elements |
+| `gap` | `0` | extra space between the factors of a `parallel` |
+| `padding` | `0.1` | padding around the canvas, so that strokes are not clipped |
 
-The arms of `copy`, `unbundle` and `bundle` are flexible: they end wherever the neighbouring layer needs them, rather than at fixed slots.
-So is a plain `wire`, which is why a narrow layer of wires stacked over a wide box comes out straight rather than kinked.
+Element groups:
 
-`copy`, `discard`, `swap`, `unbundle` and `bundle` are plain values, not functions: write `copy`, not `copy()`.
-To restyle one of them, wrap it in `styled` (see below).
-`process`, `state` and `effect` also take `stroke` and `fill` arguments, and `wire` a `stroke` argument, restyling just that element, including its wire stubs; `auto` inherits from the style and `none` disables.
+| Key | Default | Meaning |
+|---|---|---|
+| `wire.stroke` | `auto` | stroke of all wires |
+| `wire.arm-angle` | `0.1` | sideways reach of a fork arm, relative to its rise, up to which the arm leaves the dot vertically; beyond it the arm leaves at an angle, and `0` makes every arm do so |
+| `box.stroke`, `box.fill` | `(thickness: 0.6pt)`, `auto` | stroke and fill of process boxes |
+| `box.height` | `0.75` | minimum height of a box |
+| `box.inset`, `box.margin` | `auto` | as the root keys, for boxes |
+| `triangle.stroke`, `triangle.fill` | `(thickness: 0.6pt)`, `auto` | stroke and fill of `state` and `effect` triangles |
+| `triangle.height` | `0.75` | minimum height of a triangle |
+| `triangle.aspect` | `2.5` | width-to-height ratio a triangle aims for; a long label first widens it and then, past this ratio, makes it taller too |
+| `triangle.inset`, `triangle.margin` | `auto` | as the root keys, for triangles |
+| `dot.radius` | `0.1` | radius of the `copy` and `discard` dots |
+| `dot.height` | `0.2` | distance of a dot, or of the branch point of `unbundle` and `bundle`, from the end of its single wire |
+| `dot.fill` | `auto` | fill of the dots; `auto` follows the wire paint |
+| `discard.kind` | `"dot"` | `"dot"` or `"ground"` |
+| `label.size` | `1em` | text size of all labels |
+| `label.sep` | `0.1` | distance between a wire and its label |
 
-Boxes and triangles grow to fit their labels, so `process("Bernoulli")` is a wide box, not a clipped one.
-Labels are ordinary Typst content: a string is typeset upright as it stands, and `$X$` gets you math.
+Plain numbers are in units and scale with `unit`; `unit`, `label.size` and stroke thicknesses are Typst lengths.
+
+### How styles combine
+
+- `auto` in an element group means "use the root key of the same name".
+- Strokes fold as in CeTZ: a partial stroke such as `(paint: red)` or `(dash: "dashed")` changes only what it names, while a full stroke such as `red + 1pt` replaces the inherited one.
+- `stroke: none` at the root hides everything, since boxes, triangles and dots take their paint from it.
+  An element comes back only when its own stroke names a paint, for example `box: (stroke: (paint: black))`.
+- `unit`, `padding` and `direction` describe the diagram as a whole, so only `string-diagram` accepts them, not `styled`.
+- Unknown keys are an error, so a typo does not pass silently.
+
+## Reading direction
+
+The `direction` style key turns the finished drawing.
+The layout is the same in every direction, and labels stay upright.
+
+| Style | Drawing |
+|---|---|
+| `(direction: "up")` | ![the program read bottom to top](docs/images/direction-up.svg) |
+| `(direction: "down")` | ![the program read top to bottom](docs/images/direction-down.svg) |
+| `(direction: "right")` | ![the program read left to right](docs/images/direction-right.svg) |
+| `(direction: "left")` | ![the program read right to left](docs/images/direction-left.svg) |
+
+- `"down"` is the vertical mirror image of `"up"`.
+- In `"right"` and `"left"`, the first factor of a `parallel` is on top, and boxes are long along the flow, as such diagrams are usually drawn.
+- Read sideways, a wire label with `side: "right"` sits below its wire and one with `side: "left"` above it.
+
+## Diagrams in running text
+
+The default unit is sized for display math.
+Inline, pass a smaller one, and a smaller label size if the diagram carries labels:
+
+```typst
+#let small = string-diagram.with(style: (unit: 1.2em))
+The copy map #small(copy) and the discard map #small(discard) satisfy
+#small(serial(copy, parallel(wire(), discard))) $=$ #small(wire()), so every object is a comonoid.
+A labelled diagram also wants smaller labels: #string-diagram(serial(wire($X$), process($f$), wire($Y$)), style: (unit: 1.3em, label: (size: 0.8em))).
+```
+
+![a paragraph with small diagrams set inline, one diagram at the default size that is too tall for the line, and a labelled diagram with reduced label size](docs/images/inline.svg)
+
+`string-diagram` returns a box whose baseline is shifted so that the diagram's vertical centre lands on the math axis.
+Pass `baseline:` to change that.
 
 ## Custom primitives
 
@@ -69,127 +310,56 @@ Labels are ordinary Typst content: a string is typeset upright as it stands, and
 ```typst
 #import "@preview/cetz:0.5.2": draw
 
-#let cap = primitive(inputs: 0, outputs: 2, width: 2, height: 1, draw: (style, geometry) => {
+#let cup = primitive(inputs: 0, outputs: 2, width: 2, height: 1, draw: (style, geometry) => {
   draw.bezier((0.5, 1), (1.5, 1), (0.5, 0.2), (1.5, 0.2), stroke: style.wire.stroke)
+})
+
+#let cap = primitive(inputs: 2, outputs: 0, width: 2, height: 1, draw: (style, geometry) => {
+  draw.bezier((0.5, 0), (1.5, 0), (0.5, 0.8), (1.5, 0.8), stroke: style.wire.stroke)
+})
+
+#let spider(n, m) = primitive(inputs: n, outputs: m, draw: (style, geometry) => {
+  let c = (geometry.width / 2, geometry.height / 2)
+  for x in geometry.input-positions { draw.line((x, 0), c, stroke: style.wire.stroke) }
+  for x in geometry.output-positions { draw.line(c, (x, geometry.height), stroke: style.wire.stroke) }
+  draw.circle(c, radius: style.dot.radius, fill: style.dot.fill, stroke: none)
 })
 ```
 
-The element is `width` by `height` units, its wire slots are centred on its edges unless `input-positions` and `output-positions` say otherwise, and `draw` is called as `(style, geometry) => ...`, where `style` is the resolved style and `geometry` holds `width`, `height`, `input-positions`, `output-positions` and `measure`.
-It draws in unit coordinates with the origin at the bottom-left corner and returns CeTZ elements.
-The declared size counts towards the canvas whether or not the drawing fills it.
-The style it receives is fully resolved, so `style.wire.stroke`, `style.box.fill` or `style.dot.radius` can be handed to CeTZ as they are; import the same CeTZ version as copycat does.
-To size an element to a label, give `width` or `height` as a function `(style, measure) => ...`, where `measure(label)` returns the label's `width` and `height` in units.
-These are measured along the element's own width and height, so an element that fits its label in both dimensions stays correct in every reading direction.
-Custom elements are rigid: their slots stay where they are put, and neighbouring wires and arms bend to meet them.
-The [gallery](docs/gallery.typ) draws a cup and a cap, a spider, and a trapezoid that measures its label.
+| Element | Drawing |
+|---|---|
+| `cup` | ![a cup](docs/images/cup.svg) |
+| `cap` | ![a cap](docs/images/cap.svg) |
+| `spider(3, 2)` | ![a spider with three inputs and two outputs](docs/images/spider.svg) |
+| `trapezoid("Describe")`, defined in [docs/figures/custom.typ](docs/figures/custom.typ) | ![a trapezoid sized to its label](docs/images/trapezoid.svg) |
 
-## Combinators
-
-`serial(..ds)` composes sequentially, with **the first argument at the bottom**.
-Output slot j of each diagram is connected to input slot j of the one above it, and composing diagrams whose wire counts disagree is an error.
-Children are centred horizontally within the widest of them, so connected slots often do not line up, and rather than bending the connection, `serial` moves the wires that are free to move.
-A box holds its slots where they are, a wire follows the box or wire it faces and carries its whole column, including its label, along with it, and the arm of a `copy` yields to either.
-A wire that is held at two different x, by a box below and another box above, becomes a smooth S-curve over its own length, and a `copy` arm runs from its dot straight to its target, leaving the dot at an angle and arriving vertically, which is how these diagrams are drawn on paper.
-Only when a pair is rigid on both sides, which is rare, is a band of `style.bend` units inserted, and every slot at that junction is carried across it, as a straight line or an S-curve.
-A wire refuses to move into a box standing next to it, and falls back to the band instead.
-
-`parallel(..ds)` composes in parallel, left to right, adding widths and inserting `style.gap` between neighbours.
-Children shorter than the tallest one are centred vertically and their wires are extended straight to the common bottom and top edges.
-A child with no outputs (such as `discard`) is aligned with the bottom edge instead, and one with no inputs (such as a `state`) with the top edge, since their only connections are on that side.
-
-Both combinators return a single argument unchanged, and both accept no arguments at all, which gives the empty diagram.
-Both also accept a `style:` argument that overrides style keys for the sub-diagram they build.
-
-`styled(diagram, ..overrides)` is the same thing as a standalone wrapper: `styled(copy, stroke: red)` is a red copy, and `styled(d, box: (fill: blue))` restyles every box inside `d`.
-`unit`, `padding` and `direction` describe the diagram as a whole, so overriding them for a sub-diagram is an error; pass them to `string-diagram` instead.
-
-## Rendering
-
-`string-diagram(diagram, style: (:), baseline: auto)` turns a diagram value into content.
-`style` is merged over `default-style` with CeTZ's folding rules (see below), so `style: (stroke: (paint: red))` keeps the default thickness.
-The result is a box whose baseline is shifted so that the diagram's vertical centre lands on the math axis, which is what makes `$ #string-diagram(a) = #string-diagram(b) $` put the `=` between the two diagrams rather than under them.
-Pass `baseline` explicitly to override that.
-
-The `direction` style key sets the reading direction: `"up"` (the default), `"down"`, `"right"` or `"left"`.
-The layout is the same in every direction; the finished drawing is flipped or turned as a whole, so `"down"` is the vertical mirror image of `"up"`, and in the horizontal directions the first factor of a `parallel` is on top.
-All labels stay upright, and boxes and triangles are sized so that their labels fit whichever way the diagram is read; in a horizontal diagram, boxes are therefore long along the flow, as such diagrams are usually drawn.
-There, a wire label with `side: "right"` sits below its wire and one with `side: "left"` above it.
+The snake equation of a compact closed category:
 
 ```typst
-#string-diagram(d, style: (direction: "right"))
+$ #string-diagram(serial(
+    parallel(wire($X$), cup),
+    parallel(cap, wire($X$)),
+  )) = #string-diagram(wire($X$, length: 2)) $
 ```
 
-## Style
+![a wire that runs up, loops back down through a cup and a cap, and continues up, equal to a straight wire](docs/images/snake.svg)
 
-The style follows [CeTZ's model](https://cetz-package.github.io/docs/basics/custom-types/style): generic keys at the root, one group of keys per kind of element, and `auto` meaning "inherit the root key of the same name".
-Strokes fold like in CeTZ: a partial stroke such as `(paint: red)` or `(dash: "dashed")` changes only what it names, while a full stroke like `red + 1pt` replaces the inherited one.
-A partial stroke without a paint disappears together with the stroke it folds onto, so `stroke: none` hides boxes, triangles and dots along with the wires, and a more local override brings an element back only by naming a paint.
-Unknown keys are rejected with an error, so typos do not pass silently.
-
-Root keys:
-
-| Key | Meaning |
-|---|---|
-| `unit` | length of one abstract unit; may be given in `em` to scale with the text |
-| `direction` | reading direction: `"up"`, `"down"`, `"right"` or `"left"` |
-| `stroke` | base stroke, inherited by every element stroke that is `auto` |
-| `fill` | base fill of solid shapes (boxes and triangles) |
-| `inset` | padding around a label inside a box or triangle |
-| `margin` | horizontal gap between a shape and its slot boundary, so that neighbours keep their distance |
-| `stub` | length of the wire stubs above and below a box |
-| `bend` | height of the S-bend band inserted by `serial` |
-| `gap` | extra space between `parallel` factors |
-| `padding` | canvas padding, so that strokes are not clipped |
-
-Element groups:
-
-| Key | Meaning |
-|---|---|
-| `wire.stroke` | stroke of all wires |
-| `wire.arm-angle` | sideways reach, in multiples of the rise, at which a fork's arm starts leaving the dot at an angle rather than vertically; `0` makes every arm leave at an angle |
-| `box.stroke`, `box.fill` | stroke and fill of process boxes |
-| `box.height` | minimum height of a process box |
-| `box.inset`, `box.margin` | inset and margin of boxes; `auto` inherits the root keys |
-| `triangle.stroke`, `triangle.fill` | stroke and fill of `state` and `effect` triangles |
-| `triangle.height` | minimum height of a triangle |
-| `triangle.aspect` | width/height a triangle aims for before it grows taller instead |
-| `triangle.inset`, `triangle.margin` | as for boxes |
-| `dot.radius` | radius of the copy and discard dots |
-| `dot.height` | height of the dots above their junction, and of the branch point of `unbundle` and `bundle` |
-| `dot.fill` | fill of the dots; `auto` follows the wire paint rather than the root fill |
-| `discard.kind` | `"dot"` or `"ground"` |
-| `label.size` | text size of all labels |
-| `label.sep` | distance of a wire label from its wire |
-
-Plain numbers are in units; `unit`, `label.size` and stroke thicknesses are Typst lengths.
-The default values are exported as `default-style`.
-
-A style can be overridden at three levels: the whole diagram, a sub-diagram, or a single element.
-
-```typst
-#string-diagram(d, style: (stroke: red))                // recolours wires, boxes and dots alike
-#let blue-boxes = styled(d, box: (fill: blue))  // likewise serial(a, b, style: (bend: 0.8))
-#let red-f = process("f", stroke: red)            // this box only, stubs included
-```
-
-## Diagrams in running text
-
-Inline diagrams keep the default unit, which is generous for 11 pt text, so pass a smaller one:
-`#string-diagram(copy, style: (unit: 0.45cm))`.
-Labels do not shrink with `unit`, because their size follows the surrounding text; shrink them too with `label: (size: 0.8em)` if a labelled diagram looks top-heavy inline.
-
-A wire label is placed to the right of its wire by default, which collides with whatever stands to the right of it in a `parallel`.
-Move it with `wire($X$, side: "left")`.
+- `draw(style, geometry)` returns CeTZ elements.
+  It draws in units, with the origin at the bottom-left corner of the element.
+- `style` is the fully resolved style, so `style.wire.stroke`, `style.box.fill` or `style.dot.radius` can be handed to CeTZ as they are.
+  Import the same CeTZ version as copycat does.
+- `geometry` holds the element's `width`, `height`, `input-positions` and `output-positions`, and a `measure` function.
+- The element is `width` × `height` units; by default it is one unit tall and as wide as its larger wire count.
+  Its wire ends are spread evenly along its edges unless `input-positions` and `output-positions` say otherwise.
+- To size an element to its label, pass `width` or `height` (or the positions) as a function `(style, measure) => ...`.
+  `measure(label)` returns the label's `width` and `height` in units, along the element's own axes, so that the element fits its label in every reading direction.
+  The trapezoid above is drawn this way.
+- Custom elements are rigid: their wire ends stay put, and the neighbouring wires bend to meet them.
+- The declared size counts towards the canvas even where the drawing is smaller.
 
 ## More
 
-[docs/gallery.typ](docs/gallery.typ) renders the full repertoire, including reading directions and custom primitives; [docs/gallery.pdf](docs/gallery.pdf) is its output.
-[docs/design.md](docs/design.md) explains how the layout works, for anyone who wants to change the library itself.
-
-## AI assistance
-
-copycat was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
-
-## License
-
-MIT, see [LICENSE](LICENSE).
+- [docs/gallery.typ](docs/gallery.typ) shows the whole repertoire in one document, with examples from probability theory; [docs/gallery.pdf](docs/gallery.pdf) is its output.
+- [CONTRIBUTING.md](CONTRIBUTING.md) explains how to run the tests and regenerate the figures, and [ARCHITECTURE.md](ARCHITECTURE.md) how the layout works.
+- copycat was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
+- MIT license, see [LICENSE](LICENSE).

@@ -81,24 +81,21 @@ An effect (the mirror image of a state):
 
 $ #string-diagram(serial(wire($X$), effect($e$))) $
 
-Flexible wiring: the arms of `copy`, `unbundle` and `bundle` run straight to wherever the layer
-above or below needs them, instead of being bent once inside the fork and once again in a
-connector band.
+The arms of `copy`, `unbundle` and `bundle` are flexible: each runs straight from its dot to wherever the neighbouring layer needs it.
 
 $ #string-diagram(serial(copy, parallel(process("Bernoulli"), wire()))) quad
   #string-diagram(serial(copy, parallel(copy, wire()))) quad
   #string-diagram(serial(parallel(process($f$), wire($Y$)), bundle, wire($X times Y$))) quad
   #string-diagram(serial(copy, parallel(unbundle, wire()))) $
 
-Wires find their own x: a narrow wire layer over a wide box, a stack of three such layers, and the
-coin-bias program written with the bias wire and the sampled value on separate layers. None of these
-needs a connector band.
+Plain wires are flexible too.
+They follow the box they stand on, so none of these needs a connector band:
 
 $ #string-diagram(serial(process("Bernoulli"), wire($"Bool"$))) quad
   #string-diagram(serial(process("Bernoulli"), wire(), wire(), wire($"Bool"$))) quad
   #string-diagram(serial(state("Uniform"), copy, parallel(wire(), process("Bernoulli")), parallel(wire($[0,1]$), wire($"Bool"$)))) $
 
-A wire held at different x at both ends bends by itself, with no band inserted:
+A wire whose two ends are held at different positions bends by itself, with no band inserted:
 
 $ #string-diagram(serial(
     parallel(process($f$), process("Bernoulli")),
@@ -108,24 +105,23 @@ $ #string-diagram(serial(
 
 == Inline diagrams
 
-The copy map #string-diagram(copy, style: (unit: 0.45cm)) and the discard map
-#string-diagram(discard, style: (unit: 0.45cm)) satisfy #string-diagram(serial(copy, parallel(wire(), discard)), style: (unit: 0.45cm))
-$=$ #string-diagram(wire(), style: (unit: 0.45cm)), so they make every object a comonoid. At the default unit
-the same term, #string-diagram(serial(copy, swap)), is rather large for running text, which is why inline uses
-should pass a smaller `unit`, and a smaller label size when the diagram carries labels:
-#string-diagram(serial(wire($X$), process($f$), wire($Y$)), style: (unit: 0.5cm, label: (size: 0.8em))).
+The copy map #string-diagram(copy, style: (unit: 1.2em)) and the discard map
+#string-diagram(discard, style: (unit: 1.2em)) satisfy #string-diagram(serial(copy, parallel(wire(), discard)), style: (unit: 1.2em))
+$=$ #string-diagram(wire(), style: (unit: 1.2em)), so every object is a comonoid.
+At the default unit the same term, #string-diagram(serial(copy, swap)), is too tall for a line of text, so inline diagrams should pass a smaller `unit`, and a smaller label size when they carry labels:
+#string-diagram(serial(wire($X$), process($f$), wire($Y$)), style: (unit: 1.3em, label: (size: 0.8em))).
 
 == Style overrides
 
-A style override can target a whole diagram (the `style:` argument of `string-diagram`), where element
-groups inherit the root `stroke` and `fill` and partial strokes fold, cetz-style:
+A style can be set for the whole diagram, through the `style:` argument of `string-diagram`.
+Element groups inherit the root `stroke` and `fill`, and partial strokes fold as in cetz:
 
 $ #string-diagram(
     serial(state("Uniform"), copy, parallel(wire($"bias"$, side: "left"), process("Bernoulli")), parallel(wire(), discard)),
-    style: (unit: 1.1cm, discard: (kind: "ground"), bend: 0.7, box: (fill: rgb("#eef3ff"))),
+    style: (unit: 2.8em, discard: (kind: "ground"), bend: 0.7, box: (fill: rgb("#eef3ff"))),
   ) $
 
-It can target a sub-diagram, via `styled` or the `style:` argument of `serial` and `parallel`:
+It can be set for a sub-diagram, through `styled` or the `style:` argument of `serial` and `parallel`:
 
 $ #string-diagram(serial(
     state("Uniform"),
@@ -133,14 +129,14 @@ $ #string-diagram(serial(
     wire($[0,1]$),
   )) $
 
-Or it can target a single element, whose inline `stroke` and `fill` restyle just that element:
+Or for a single element, through its own `stroke` and `fill` arguments:
 
 $ #string-diagram(serial(wire($X$), process($f$, stroke: (paint: blue), fill: rgb("#e7f0fe")), wire($Y$, stroke: (dash: "dashed")))) $
 
 == Reading direction
 
 The style key `direction` reads the same diagram bottom to top (the default), top to bottom, left to right, or right to left.
-For horizontal directions, a wire label with `side: "right"` sits below its wire and one with `side: "left"` above it.
+Read sideways, a wire label with `side: "right"` sits below its wire and one with `side: "left"` above it.
 
 #let program = serial(
   state("Uniform"),
@@ -156,14 +152,14 @@ $ #string-diagram(program, style: (direction: "right")) quad quad
 == Custom primitives
 
 `primitive` turns a cetz drawing into a rigid element that composes like any other.
-The drawing function receives the resolved style and the element's geometry, and draws in unit coordinates with the origin at the bottom-left corner.
+The drawing function receives the resolved style and the element's geometry, and draws in units with the origin at the element's bottom-left corner.
 
 #import "@preview/cetz:0.5.2": draw
 
-#let cap = primitive(inputs: 0, outputs: 2, width: 2, height: 1, draw: (style, geometry) => {
+#let cup = primitive(inputs: 0, outputs: 2, width: 2, height: 1, draw: (style, geometry) => {
   draw.bezier((0.5, 1), (1.5, 1), (0.5, 0.2), (1.5, 0.2), stroke: style.wire.stroke)
 })
-#let cup = primitive(inputs: 2, outputs: 0, width: 2, height: 1, draw: (style, geometry) => {
+#let cap = primitive(inputs: 2, outputs: 0, width: 2, height: 1, draw: (style, geometry) => {
   draw.bezier((0.5, 0), (1.5, 0), (0.5, 0.8), (1.5, 0.8), stroke: style.wire.stroke)
 })
 #let spider(n, m) = primitive(inputs: n, outputs: m, draw: (style, geometry) => {
@@ -175,15 +171,15 @@ The drawing function receives the resolved style and the element's geometry, and
 
 The snake equation of a compact closed category, and a spider:
 
-$ #string-diagram(serial(parallel(wire($X$), cap), parallel(cup, wire($X$)))) = #string-diagram(wire($X$, length: 2))
+$ #string-diagram(serial(parallel(wire($X$), cup), parallel(cap, wire($X$)))) = #string-diagram(wire($X$, length: 2))
   quad quad
   #string-diagram(serial(parallel(wire(), wire(), wire()), spider(3, 2))) $
 
 An element can size itself to its label by giving `width` or `height` as a function of the style and a `measure` function.
-`measure` reports the label's extent along the element's width and height, so this trapezoid fits its label in every reading direction:
+`measure` reports the label's extent along the element's own width and height, so this trapezoid fits its label in every reading direction:
 
 #let trapezoid(label) = primitive(
-  width: (style, measure) => calc.max(1.0, measure(label).width + 2 * (style.box.inset + style.box.margin)),
+  width: (style, measure) => calc.max(1.0, measure(label).width + 2 * (style.box.inset + style.box.margin) + 0.2),
   height: (style, measure) => calc.max(style.box.height, measure(label).height + 2 * style.box.inset) + 2 * style.stub,
   draw: (style, geometry) => {
     let (w, h, m) = (geometry.width, geometry.height, style.box.margin)

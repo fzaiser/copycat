@@ -11,7 +11,7 @@ categories = ["visualization"]
 disciplines = ["mathematics", "computer-science"]
 # The floor of cetz 0.5.2, which copycat imports.
 compiler = "0.14.0"
-# docs/ is submitted to typst/packages, so that the README can link to it, but is
-# left out of the bundle that typst downloads. The other entries are development
-# files; scripts/stage.sh assembles the submission without them.
-exclude = ["/docs", "/tests", "/scripts", "/.github", "/CONTRIBUTING.md", "/PUBLISHING.md", "/.typos.toml"]
+# Development files, which are not part of the package. scripts/stage.sh
+# assembles the submission without them and points the README's links at the
+# repository instead.
+exclude = ["/docs", "/tests", "/scripts", "/.github", "/ARCHITECTURE.md", "/CONTRIBUTING.md", "/PUBLISHING.md", "/.typos.toml"]
