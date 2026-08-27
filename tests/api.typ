@@ -76,10 +76,18 @@
   assert(wide.width > narrow.width * 1.5, message: "a long label does not widen its box")
   assert(close(wide.height, narrow.height), message: "a long label changes the box height")
 
-  // A wire label with `side: "left"` grows the diagram to the other side.
-  let r = measure(string-diagram(parallel(wire($X$), wire())))
-  let l = measure(string-diagram(parallel(wire($X$, side: "left"), wire())))
-  assert(l.width > r.width, message: "a left label does not extend the diagram to the left")
+  // A labelled wire makes room for its label on either side: a parallel
+  // neighbour is placed after the label. Read sideways, the wire is as long
+  // as the label.
+  let lab = measure(string-diagram(wire("a long label")))
+  let box = measure(string-diagram(process("f")))
+  for side in ("right", "left") {
+    let both = measure(string-diagram(parallel(wire("a long label", side: side), process("f"))))
+    assert(both.width > lab.width + box.width / 2, message: "a parallel neighbour overlaps a wire label on the " + side)
+  }
+  let plain = measure(string-diagram(serial(process("f"), wire(), process("g")), style: (direction: "right")))
+  let long = measure(string-diagram(serial(process("f"), wire("a long label"), process("g")), style: (direction: "right")))
+  assert(long.width > plain.width * 1.3, message: "a sideways wire does not grow to fit its label")
 
   // Style overrides at every level render, in every direction.
   for dir in ("up", "down", "right", "left") {

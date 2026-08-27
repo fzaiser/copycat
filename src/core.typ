@@ -168,7 +168,10 @@
 
 /// A plain vertical wire, optionally labelled beside it. Both of its ends are
 /// flexible: the wire is drawn wherever the diagrams above and below need it,
-/// and bends smoothly if the two ends disagree.
+/// and bends smoothly if the two ends disagree. A labelled wire makes room for
+/// its label: beside it, so that `parallel` neighbours keep their distance,
+/// and along it, so that a label read sideways fits between the elements
+/// before and after.
 #let wire(..args, label: none, length: 1, side: "right", stroke: auto) = {
   assert(args.pos().len() <= 1, message: "wire: expected at most one positional argument (the label)")
   assert(args.named().len() == 0, message: "wire: unknown argument(s) " + args.named().keys().map(repr).join(", "))
@@ -178,16 +181,20 @@
     let st = resolve-style(env.style)
     let stroke = if stroke == none { no-stroke } else { stroke }
     let ws = use-stroke(if stroke == auto { st.wire.stroke } else { group-style(st, "wire", (stroke: stroke)).stroke })
+    let (lw, lh) = if label == none { (0.0, 0.0) } else { _measure(env, st, label) }
+    let extra = calc.max(0.0, st.label.sep + lw + st.margin - 0.5)
+    let x0 = if side == "left" { 0.5 + extra } else { 0.5 }
+    let h = if label == none { length * 1.0 } else { calc.max(length * 1.0, lh + 2 * st.margin) }
     (
-      width: 1.0,
-      height: length * 1.0,
-      input-positions: (0.5,),
-      output-positions: (0.5,),
+      width: 1.0 + extra,
+      height: h,
+      input-positions: (x0,),
+      output-positions: (x0,),
       spans: (),
       draw: (o, in-over: none, out-over: none) => {
         let (ox, oy) = o
-        let (bx, by) = _target(in-over, 0, 0.5, 0.0, -1)
-        let (tx, ty) = _target(out-over, 0, 0.5, length, 1)
+        let (bx, by) = _target(in-over, 0, x0, 0.0, -1)
+        let (tx, ty) = _target(out-over, 0, x0, h, 1)
         _sbend((ox + bx, oy + by), (ox + tx, oy + ty), ws)
         if label != none {
           let d = if side == "right" { st.label.sep } else { -st.label.sep }
