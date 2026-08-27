@@ -1,0 +1,6 @@
+[default.extend-identifiers]
+ba = "ba"
+
+[files]
+# Typst's SVG export names glyphs by hash.
+extend-exclude = ["docs/*.svg"]

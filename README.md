@@ -3,7 +3,10 @@
 String diagrams for monoidal categories with copying and discarding, that is, CD categories and in particular Markov categories, drawn in the style of Fritz (2020) and Cho–Jacobs (2019) and built on [CeTZ](https://typst.app/universe/package/cetz).
 The vocabulary is that of process theories: wires carry systems, boxes are processes, states and effects sit at the ends of wires, and diagrams are composed in serial and in parallel.
 
-![Diagrams drawn with copycat: a probabilistic program, the counitality law, and copying a product](docs/example.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/example-dark.svg">
+  <img alt="Diagrams drawn with copycat: a probabilistic program, the counitality law, and copying a product" src="docs/example-light.svg">
+</picture>
 
 ## Quick start
 
@@ -14,6 +17,8 @@ $ #string-diagram(serial(state("Uniform"), wire($[0,1]$), process("Bernoulli"), 
 
 $ #string-diagram(serial(copy, parallel(discard, wire()))) = #string-diagram(wire()) $
 ```
+
+copycat needs Typst 0.14 or newer and downloads CeTZ itself.
 
 The package exports `string-diagram`, the combinators `serial`, `parallel` and `styled`, the primitives `wire`, `process`, `state`, `effect`, `copy`, `discard`, `swap`, `bundle` and `unbundle`, `primitive` for defining your own, and `default-style`.
 They are meant to be used unqualified, as above.
@@ -180,6 +185,10 @@ Move it with `wire($X$, side: "left")`.
 
 [docs/gallery.typ](docs/gallery.typ) renders the full repertoire, including reading directions and custom primitives; [docs/gallery.pdf](docs/gallery.pdf) is its output.
 [docs/design.md](docs/design.md) explains how the layout works, for anyone who wants to change the library itself.
+
+## AI assistance
+
+copycat was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
 
 ## License
 

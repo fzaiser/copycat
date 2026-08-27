@@ -1,4 +1,4 @@
-#import "../src/lib.typ": copy, discard, state, effect, primitive, bundle, process, serial, unbundle, string-diagram, styled, swap, parallel, wire
+#import "@preview/copycat:0.1.0": copy, discard, state, effect, primitive, bundle, process, serial, unbundle, string-diagram, styled, swap, parallel, wire
 
 #set page(width: 16cm, height: auto, margin: 1.2cm)
 #set text(size: 11pt)
