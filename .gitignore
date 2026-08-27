@@ -1,0 +1,5 @@
+*.pdf
+*.png
+!/docs/*.pdf
+!/docs/*.png
+/tests/out/
