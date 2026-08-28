@@ -275,7 +275,7 @@ Plain numbers are in units and scale with `unit`; `unit`, `label.size` and strok
 ## Reading direction
 
 The `direction` style key turns the finished drawing.
-The layout is the same in every direction, and labels stay upright.
+Labels stay upright; boxes, triangles and labelled wires make room for them along the new flow.
 
 | Style | Drawing |
 |---|---|
@@ -297,6 +297,7 @@ Inline, pass a smaller one, and a smaller label size if the diagram carries labe
 #let small = string-diagram.with(style: (unit: 1.2em))
 The copy map #small(copy) and the discard map #small(discard) satisfy
 #small(serial(copy, parallel(wire(), discard))) $=$ #small(wire()), so every object is a comonoid.
+At the default size the same diagram, #string-diagram(serial(copy, parallel(wire(), discard))), is too tall for a line of text.
 A labelled diagram also wants smaller labels: #string-diagram(serial(wire($X$), process($f$), wire($Y$)), style: (unit: 1.3em, label: (size: 0.8em))).
 ```
 

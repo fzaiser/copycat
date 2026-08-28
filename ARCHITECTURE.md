@@ -14,7 +14,7 @@ A diagram passes through three stages.
 | Draw | `string-diagram` | The layout's `draw` produces CeTZ elements. One transform turns them into the requested reading direction, and the canvas is boxed so that its centre sits on the math axis. |
 
 All layout code works in a single frame: the diagram reads bottom to top, x grows to the right, lengths are in units, and the origin is the bottom-left corner.
-Other reading directions never reach the layout code.
+The reading direction is applied afterwards, as one transform of the finished drawing; the layout consults it only where an upright label changes an element's size, see [Measuring labels](#measuring-labels).
 
 The files:
 

@@ -3,8 +3,9 @@
 //
 // Diagrams are laid out bottom to top: inputs enter at the bottom edge and
 // outputs leave at the top edge. Other reading directions are a linear map
-// applied to the finished drawing at render time, so the layout code only
-// ever sees the bottom-to-top frame.
+// applied to the finished drawing at render time; the layout code works in
+// the bottom-to-top frame and consults the direction only to measure labels,
+// which stay upright on the page.
 
 #import "@preview/cetz:0.5.2"
 #import "style.typ": default-style, no-stroke, use-stroke, resolve-style, group-style, check-style, normalize-style, whole-diagram-keys
