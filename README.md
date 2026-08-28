@@ -1,4 +1,4 @@
-# drawstring
+# drawstring: Draw String Diagrams in Typst
 
 String diagrams for Markov categories, and more generally for monoidal categories with copying and discarding, as a [Typst](https://typst.app) package.
 You write a diagram as a term, such as `serial(copy, parallel(discard, wire()))`, and drawstring lays it out in the style of Fritz (2020) and Cho–Jacobs (2019), drawing with [CeTZ](https://typst.app/universe/package/cetz).
