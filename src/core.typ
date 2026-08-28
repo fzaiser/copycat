@@ -115,21 +115,22 @@
 // Whether flexible slot `k` at one end of layer `l` may be moved to `x`. A
 // slot may not be moved into a solid shape it does not already sit in, nor
 // into the label of another wire; and a labelled wire, which takes its label
-// with it, may not put the label onto a solid shape or another slot. `labels`
-// are the label regions of that end's slots, `noms` and `curs` their nominal
-// and current positions; the layer's own coordinates are offset by `dx` from
-// those of `x`.
+// with it, may not put the label onto a solid shape, another slot or another
+// label. `labels` are the label regions of that end's slots, `noms` and
+// `curs` their nominal and current positions; the layer's own coordinates
+// are offset by `dx` from those of `x`.
 #let _free-x(l, dx, labels, noms, curs, k, x) = {
   let inside(v, r) = r.at(0) < v and v < r.at(1)
   let overlap(r, s) = r.at(0) < s.at(1) and s.at(0) < r.at(1)
+  let clear(r, s) = r == none or s == none or not overlap(r, s)
   let region(j, at) = _shift-region(labels.at(j), dx + at - noms.at(j))
   let (mine, was) = (region(k, x), region(k, noms.at(k)))
   l.spans.all(sp => {
     let s = _shift-region(sp, dx)
-    (not inside(x, s) or inside(noms.at(k), s)) and (mine == none or not overlap(mine, s) or overlap(was, s))
+    (not inside(x, s) or inside(noms.at(k), s)) and (clear(mine, s) or overlap(was, s))
   }) and range(labels.len()).all(j => j == k or {
     let other = region(j, curs.at(j))
-    (other == none or not inside(x, other)) and (mine == none or not inside(curs.at(j), mine))
+    (other == none or not inside(x, other)) and (mine == none or not inside(curs.at(j), mine)) and clear(mine, other)
   })
 }
 
@@ -651,8 +652,10 @@
         height: y,
         input-positions: bx.first(),
         output-positions: tx.last(),
-        in-labels: ls.first().in-labels.map(r => _shift-region(r, dxs.first())),
-        out-labels: ls.last().out-labels.map(r => _shift-region(r, dxs.last())),
+        // The regions follow the slots the sweeps have moved, so that an
+        // enclosing serial sees the labels where they are.
+        in-labels: ls.first().in-labels.enumerate().map(((k, r)) => _shift-region(r, dxs.first() + bx.first().at(k) - nb.first().at(k))),
+        out-labels: ls.last().out-labels.enumerate().map(((k, r)) => _shift-region(r, dxs.last() + tx.last().at(k) - nt.last().at(k))),
         spans: {
           let out = ()
           for (i, l) in ls.enumerate() {

@@ -107,8 +107,8 @@
   // band instead. The unlabelled versions need no band, so the band is
   // exactly the labelled versions' extra height.
   let band = default-style.bend * u
-  let wide = process("A very wide process", outputs: 3)
-  let above(top) = measure(string-diagram(serial(wide, top), style: (unit: u))).height
+  let above(top) = measure(string-diagram(serial(process("A very wide process", outputs: top.inputs), top), style: (unit: u))).height
+  let below(bottom) = measure(string-diagram(serial(bottom, process("A very wide process", inputs: bottom.outputs)), style: (unit: u))).height
   assert(
     close(above(parallel(wire("a long label"), wire(), wire())) - above(parallel(wire(), wire(), wire())), band, tolerance: 0.02),
     message: "a routed wire runs through a wire label",
@@ -118,11 +118,26 @@
     close(above(parallel(wire(short), process("f"), wire(short, side: "left"))) - above(parallel(wire(), process("f"), wire())), band, tolerance: 0.02),
     message: "a routed wire label runs into a box",
   )
-  let tall = process("A very wide process", inputs: 3)
-  let below(bottom) = measure(string-diagram(serial(bottom, tall), style: (unit: u))).height
   assert(
     close(below(parallel(copy, wire("a long label", side: "left"))) - below(parallel(copy, wire())), band, tolerance: 0.02),
     message: "a routed arm ends in a wire label",
+  )
+  let facing = box(width: 0.45 * u)
+  assert(
+    close(above(parallel(wire(facing), wire(facing, side: "left"))) - above(parallel(wire(), wire())), band, tolerance: 0.02),
+    message: "routed wire labels overlap each other",
+  )
+
+  // A nested serial reports its labels where its own routing has put them.
+  // Inside `nested`, the labelled wire moves right to meet the swap; stacked
+  // on another swap, the wire beside it may not follow that swap's other
+  // output through the label, so a band appears between the two.
+  let nested = serial(parallel(wire("a long label"), wire(), style: (gap: 3)), swap)
+  let stacked = measure(string-diagram(serial(swap, nested), style: (unit: u)))
+  let (top, bottom) = (measure(string-diagram(nested, style: (unit: u))), measure(string-diagram(swap, style: (unit: u))))
+  assert(
+    close(stacked.height, top.height + bottom.height - 2 * default-style.padding * u + band, tolerance: 0.02),
+    message: "a nested serial reports its labels at their nominal positions",
   )
 
   // Style overrides at every level render, in every direction.

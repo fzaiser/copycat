@@ -92,8 +92,9 @@ It then decides which slots move, in this order:
    Only then is a band of `style.bend` units inserted between the two layers, and every slot at that junction is carried across it: flexible slots reach through the band themselves, via their overrides, and rigid pairs are drawn as S-curves, or as straight lines where they agree.
 
 Claims are ordered rigid > wire > arm, and a slot that has been pinned keeps the claim of its source, so a box's position propagates through any number of wires.
-`_free-x` refuses a move that would put a slot into a solid shape it does not already sit in or into another wire's label, or that would carry a wire's own label onto a shape or another slot of the same layer.
+`_free-x` refuses a move that would put a slot into a solid shape it does not already sit in or into another wire's label, or that would carry a wire's own label onto a shape, another slot or another label of the same layer.
 A refused slot stays where it is and is carried across the band instead.
+The regions a `serial` reports for its own boundary slots follow the slots its sweeps have moved, so that an enclosing `serial` sees the labels where they are.
 
 ## Parallel composition
 
