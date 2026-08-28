@@ -16,25 +16,23 @@ You write a diagram as a term, such as `serial(copy, parallel(discard, wire()))`
 ```typst
 #import "@preview/copycat:0.1.0": *
 
-$ #string-diagram(serial(state("Camera"), wire("photo"), process("Describe"), wire("text"))) $
+$ #string-diagram(serial(
+    state("Camera"),
+    wire("photo"),
+    process("Describe"),
+    wire("text"),
+  )) $
 
-$ #string-diagram(serial(copy, parallel(discard, wire()))) = #string-diagram(wire()) $
+$ #string-diagram(serial(
+    copy,
+    parallel(discard, wire()),
+  )) = #string-diagram(wire()) $
 ```
 
 ![A camera producing a photo that is described in text, and the equation copy-then-discard equals identity](docs/images/quick-start.svg)
 
 The first diagram is read from the bottom up: a camera produces a photo, which is then described in text.
 The second says that copying something and discarding one of the copies is the same as doing nothing.
-
-copycat needs Typst 0.14 or newer; CeTZ is downloaded automatically.
-
-The wildcard import brings in `string-diagram`, the combinators `serial`, `parallel` and `styled`, the elements `wire`, `process`, `state`, `effect`, `copy`, `discard`, `swap`, `unbundle` and `bundle`, plus `primitive` and `default-style`.
-Two of the names deserve a note:
-
-- `state` shadows Typst's builtin, which stays reachable as `std.state`.
-  To keep the builtin, rename on import: `#import "@preview/copycat:0.1.0": serial, parallel, wire, state as dist`.
-- The renderer is called `string-diagram` rather than `diagram`, which fletcher and lilaq already export.
-  Alias it if you like, and fix a style at the same time: `#let sd = string-diagram.with(style: (unit: 1.5em))`.
 
 ## Building blocks
 
@@ -68,6 +66,10 @@ Some variants:
 | `effect($e$, inputs: 2)` | ![an effect with two inputs](docs/images/effect-2.svg) |
 | `process("Describe")` | ![a box that has grown to fit the label Describe](docs/images/process-wide.svg) |
 
+A note on names:
+- `state` shadows Typst's builtin, which stays reachable as `std.state`; to keep the builtin, import selectively and rename, as in `#import "@preview/copycat:0.1.0": serial, parallel, wire, state as dist`.
+- The renderer is called `string-diagram` rather than `diagram`, which fletcher and lilaq already export; alias it with `#let sd = string-diagram` if you prefer the short name.
+
 ## Composing diagrams
 
 `serial(a, b, ...)` stacks diagrams from bottom to top and connects each one's outputs to the inputs of the next.
@@ -90,8 +92,8 @@ serial(
 
 ![a copy feeding f and g](docs/images/copy-fg.svg)
 
-- Diagrams read **bottom to top**: inputs enter at the bottom edge and outputs leave at the top edge.
-  The first argument of `serial` is the bottom one.
+- By default, diagrams read **bottom to top**: inputs enter at the bottom edge and outputs leave at the top edge, and the first argument of `serial` is the bottom one.
+  See [Reading direction](#reading-direction) for the other three.
 - In `serial`, each diagram must have as many outputs as the next one has inputs.
   `serial(copy, wire())` is an error, since `copy` has two outputs and `wire()` one input.
 - Every diagram has an `inputs` and an `outputs` field with its wire counts.
@@ -165,7 +167,7 @@ serial(
 ## Styling
 
 A style is a dictionary of overrides on `default-style`.
-It can be applied at three levels.
+Most documents fix one once, `#let sd = string-diagram.with(style: (unit: 1.5em))`, but a style can be applied at three levels.
 The examples use this program, which keeps a photo and also describes it in text:
 
 ```typst
@@ -357,9 +359,10 @@ $ #string-diagram(serial(
 - Custom elements are rigid: their wire ends stay put, and the neighbouring wires bend to meet them.
 - The declared size counts towards the canvas even where the drawing is smaller.
 
-## More
+## Further information
 
-- [docs/gallery.typ](docs/gallery.typ) shows the whole repertoire in one document, with examples from probability theory; [docs/gallery.pdf](docs/gallery.pdf) is its output.
-- [CONTRIBUTING.md](CONTRIBUTING.md) explains how to run the tests and regenerate the figures, and [ARCHITECTURE.md](ARCHITECTURE.md) how the layout works.
-- copycat was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
-- MIT license, see [LICENSE](LICENSE).
+- **Gallery**: [docs/gallery.typ](docs/gallery.typ) shows the whole repertoire in one document, with examples from probability theory; [docs/gallery.pdf](docs/gallery.pdf) is its output.
+- **Requirements**: Typst 0.14 or newer.
+- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md) explains how to run the tests and regenerate the figures, and [ARCHITECTURE.md](ARCHITECTURE.md) how the layout works.
+- **AI assistance**: copycat was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
+- **License**: MIT, see [LICENSE](LICENSE).
