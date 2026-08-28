@@ -4,8 +4,8 @@
 #
 # Every page of a docs/figures/*.typ file is one figure, named by its
 # `fig("name", ...)` call (see docs/figures/setup.typ), and is written to
-# docs/images/<name>.svg. With `--check`, the figures are rendered to
-# tests/out/images instead and compared with docs/images.
+# docs/images/<name>.svg. With `--check`, everything is rendered under
+# tests/out instead and compared with the committed files.
 set -eu
 cd "$(dirname "$0")/.."
 check=
@@ -19,19 +19,19 @@ version=$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)
 pkg=tests/out/packages
 mkdir -p "$pkg/preview/drawstring"
 ln -sfn "$PWD" "$pkg/preview/drawstring/$version"
-# Only typst's bundled fonts are used, so that the figures come out the same
-# on every machine.
-opts=(--root . --package-path "$pkg" --ignore-system-fonts)
+# Only typst's bundled fonts are used, and the PDF gets a fixed creation date,
+# so that the output is the same on every machine and every run.
+opts=(--root . --package-path "$pkg" --ignore-system-fonts --creation-timestamp 0)
 
 # Shown through <img>, as on GitHub and Typst Universe, an SVG still applies
 # its own media queries: this block turns the black ink white in dark mode.
 css='<style>@media (prefers-color-scheme: dark) { [fill="#000000"] { fill: #fff } [stroke="#000000"] { stroke: #fff } }</style>'
 
-images=docs/images
-if [ -n "$check" ]; then images=tests/out/images; fi
+out=docs
+if [ -n "$check" ]; then out=tests/out/docs; fi
 pages=tests/out/figures
-rm -rf "$pages" "$images"
-mkdir -p "$pages" "$images"
+rm -rf "$pages" "$out/images"
+mkdir -p "$pages" "$out/images"
 for f in docs/figures/*.typ; do
   stem=$(basename "${f%.typ}")
   [ "$stem" = setup ] && continue
@@ -41,25 +41,30 @@ for f in docs/figures/*.typ; do
     p=$((p + 1))
     page=$pages/$stem-$p.svg
     [ -f "$page" ] || { echo "$f: no page $p for figure $name" >&2; exit 1; }
-    [ ! -e "$images/$name.svg" ] || { echo "$f: figure $name is defined twice" >&2; exit 1; }
+    [ ! -e "$out/images/$name.svg" ] || { echo "$f: figure $name is defined twice" >&2; exit 1; }
     grep -q '#000000' "$page" || { echo "$page: no black ink to restyle; has typst's SVG output changed?" >&2; exit 1; }
-    sed "s|<svg\([^>]*\)>|<svg\1>$css|" "$page" > "$images/$name.svg"
+    sed "s|<svg\([^>]*\)>|<svg\1>$css|" "$page" > "$out/images/$name.svg"
   done
   [ ! -f "$pages/$stem-$((p + 1)).svg" ] || { echo "$f: more pages than figures" >&2; exit 1; }
 done
-# The SVG output can change between typst releases, so the tests compare the
-# figures only under the release that rendered them.
-typst --version | sed 's/^typst \([0-9.]*\).*/\1/' > "$images/typst-version"
+typst compile "${opts[@]}" docs/gallery.typ "$out/gallery.pdf"
+# The output differs between typst releases, so the tests compare it only
+# under the release that rendered it.
+typst --version | sed 's/^typst \([0-9.]*\).*/\1/' > "$out/typst-version"
 
 if [ -n "$check" ]; then
-  if diff -r docs/images "$images" >/dev/null; then
-    echo "docs/images matches docs/figures"
+  stale=$({
+    diff -rq docs/images "$out/images"
+    cmp -s docs/gallery.pdf "$out/gallery.pdf" || echo "docs/gallery.pdf differs"
+    cmp -s docs/typst-version "$out/typst-version" || echo "docs/typst-version differs"
+  } 2>&1 || true)
+  if [ -z "$stale" ]; then
+    echo "docs/images, docs/gallery.pdf and docs/typst-version are up to date"
   else
-    diff -rq docs/images "$images" >&2 || true
-    echo "docs/images is out of date: run scripts/render-docs.sh" >&2
+    printf '%s\n' "$stale" >&2
+    echo "the rendered docs are out of date: run scripts/render-docs.sh" >&2
     exit 1
   fi
   exit 0
 fi
-typst compile "${opts[@]}" docs/gallery.typ docs/gallery.pdf
-echo "rendered docs/images/*.svg and docs/gallery.pdf"
+echo "rendered docs/images/*.svg and docs/gallery.pdf with typst $(cat docs/typst-version)"

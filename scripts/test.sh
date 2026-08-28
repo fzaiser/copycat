@@ -52,14 +52,17 @@ for f in docs/figures/*.typ; do
   compile "$f" "figure-$name" "$f" --package-path "$staged"
 done
 
-# The committed figures must match their sources. Typst's SVG output differs
-# between releases, so only the release that rendered them can tell.
-rendered=$(cat docs/images/typst-version)
+# The committed figures and gallery must match their sources. Typst's output
+# differs between releases, so only the release that rendered them can tell;
+# CI installs that release for this check.
+rendered=$(cat docs/typst-version 2>/dev/null || true)
 installed=$(typst --version | sed 's/^typst \([0-9.]*\).*/\1/')
-if [ "$installed" = "$rendered" ]; then
-  if err=$(scripts/render-docs.sh --check 2>&1); then ok "docs/images is up to date"; else bad "docs/images" "$err"; fi
+if ! printf '%s\n' "$rendered" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  bad "docs/typst-version" "expected the typst release that rendered the docs, found '$rendered'; run scripts/render-docs.sh"
+elif [ "$installed" = "$rendered" ]; then
+  if err=$(scripts/render-docs.sh --check 2>&1); then ok "rendered docs are up to date"; else bad "rendered docs" "$err"; fi
 else
-  skipped "docs/images was rendered with typst $rendered, not $installed"
+  skipped "the docs were rendered with typst $rendered, not $installed"
 fi
 
 for f in tests/fail/*.typ; do

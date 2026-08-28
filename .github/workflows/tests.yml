@@ -29,6 +29,21 @@ jobs:
       - name: Run the test suite
         run: scripts/test.sh
 
+  docs:
+    name: Rendered docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      # The figures and the gallery are compared under the release that
+      # rendered them, whichever that is.
+      - id: renderer
+        run: echo "typst=$(cat docs/typst-version)" >> "$GITHUB_OUTPUT"
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: ${{ steps.renderer.outputs.typst }}
+      - run: scripts/render-docs.sh --check
+
   typos:
     name: Spelling
     runs-on: ubuntu-latest
