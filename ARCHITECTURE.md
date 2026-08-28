@@ -34,7 +34,7 @@ Only `inputs` and `outputs` are public; the rest may change.
 | `flex-in`, `flex-out` | the same as booleans: may this end move at all |
 | `flex-link` | for each input, the index of the output that is the other end of the same wire, or `none` |
 | `layout` | `env => layout`, see below |
-| `width`, `height`, `input-positions`, `output-positions`, `spans`, `draw` | the *nominal* layout: `layout` evaluated for the default style with every label measured as empty. It is stored eagerly so that a diagram can be inspected outside `context`. |
+| `width`, `height`, `input-positions`, `output-positions`, `spans`, `in-labels`, `out-labels`, `draw` | the *nominal* layout: `layout` evaluated for the default style with every label measured as empty. It is stored eagerly so that a diagram can be inspected outside `context`. |
 
 ### Slot kinds
 
@@ -56,7 +56,8 @@ Its kind says who decides where it sits:
 
 - `width` and `height` in units,
 - `input-positions` and `output-positions`, the x of each slot,
-- `spans`, the horizontal extents of solid shapes, which wires must not be moved into, and
+- `spans`, the horizontal extents of solid shapes, which wires must not be moved into,
+- `in-labels` and `out-labels`, for each slot the horizontal extent of the label that moves with it, or `none` (only labelled wires have one; a layout may leave the two fields out, and `_mk` fills them with `none`), and
 - `draw(origin, in-over: none, out-over: none)`, which returns CeTZ elements; elements without flexible slots take only `origin`, and `_draw` calls either form.
 
 ### Measuring labels
@@ -91,7 +92,8 @@ It then decides which slots move, in this order:
    Only then is a band of `style.bend` units inserted between the two layers, and every slot at that junction is carried across it: flexible slots reach through the band themselves, via their overrides, and rigid pairs are drawn as S-curves, or as straight lines where they agree.
 
 Claims are ordered rigid > wire > arm, and a slot that has been pinned keeps the claim of its source, so a box's position propagates through any number of wires.
-A wire may not be moved into a solid shape it does not already sit in; `_free-x` checks this against the `spans`.
+`_free-x` refuses a move that would put a slot into a solid shape it does not already sit in or into another wire's label, or that would carry a wire's own label onto a shape or another slot of the same layer.
+A refused slot stays where it is and is carried across the band instead.
 
 ## Parallel composition
 

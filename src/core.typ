@@ -80,6 +80,9 @@
 #let _mk(inputs, outputs, layout, kind-in: none, kind-out: none, link: none) = {
   let ki = if kind-in == none { _zeros(inputs) } else { kind-in }
   let ko = if kind-out == none { _zeros(outputs) } else { kind-out }
+  // A layout that reserves no room beside its slots may leave out `in-labels`
+  // and `out-labels`.
+  let full = env => (in-labels: _nones(inputs), out-labels: _nones(outputs)) + layout(env)
   (
     inputs: inputs,
     outputs: outputs,
@@ -88,8 +91,8 @@
     flex-in: ki.map(k => k > 0),
     flex-out: ko.map(k => k > 0),
     flex-link: if link == none { _nones(inputs) } else { link },
-    layout: layout,
-  ) + layout(_nominal-env)
+    layout: full,
+  ) + full(_nominal-env)
 }
 
 // The output slot each input slot is linked to, read backwards.
@@ -105,11 +108,29 @@
 // over arms, and a slot that has already been pinned keeps its source's claim.
 #let _offer(kind, auth) = if kind == 0 { 0 } else if auth == 3 { kind } else { auth }
 
-// A wire may not be moved into a solid shape it does not already sit in.
-#let _free-x(l, dx, nominal, x) = l.spans.all(sp => {
-  let (a, b) = (sp.at(0) + dx, sp.at(1) + dx)
-  not (a < x and x < b) or (a < nominal and nominal < b)
-})
+// A region `(a, b)` of the x axis, moved by `d`.
+#let _shift-region(r, d) = if r == none { none } else { (r.at(0) + d, r.at(1) + d) }
+
+// Whether flexible slot `k` at one end of layer `l` may be moved to `x`. A
+// slot may not be moved into a solid shape it does not already sit in, nor
+// into the label of another wire; and a labelled wire, which takes its label
+// with it, may not put the label onto a solid shape or another slot. `labels`
+// are the label regions of that end's slots, `noms` and `curs` their nominal
+// and current positions; the layer's own coordinates are offset by `dx` from
+// those of `x`.
+#let _free-x(l, dx, labels, noms, curs, k, x) = {
+  let inside(v, r) = r.at(0) < v and v < r.at(1)
+  let overlap(r, s) = r.at(0) < s.at(1) and s.at(0) < r.at(1)
+  let region(j, at) = _shift-region(labels.at(j), dx + at - noms.at(j))
+  let (mine, was) = (region(k, x), region(k, noms.at(k)))
+  l.spans.all(sp => {
+    let s = _shift-region(sp, dx)
+    (not inside(x, s) or inside(noms.at(k), s)) and (mine == none or not overlap(mine, s) or overlap(was, s))
+  }) and range(labels.len()).all(j => j == k or {
+    let other = region(j, curs.at(j))
+    (other == none or not inside(x, other)) and (mine == none or not inside(curs.at(j), mine))
+  })
+}
 
 // ------------------------------------------------------------------ overrides
 //
@@ -169,9 +190,9 @@
 /// A plain vertical wire, optionally labelled beside it. Both of its ends are
 /// flexible: the wire is drawn wherever the diagrams above and below need it,
 /// and bends smoothly if the two ends disagree. A labelled wire makes room for
-/// its label: beside it, so that `parallel` neighbours keep their distance,
-/// and along it, so that a label read sideways fits between the elements
-/// before and after.
+/// its label: beside it, so that `parallel` neighbours keep their distance
+/// and `serial` routes nothing through it, and along it, so that a label read
+/// sideways fits between the elements before and after.
 #let wire(..args, label: none, length: 1, side: "right", stroke: auto) = {
   assert(args.pos().len() <= 1, message: "wire: expected at most one positional argument (the label)")
   assert(args.named().len() == 0, message: "wire: unknown argument(s) " + args.named().keys().map(repr).join(", "))
@@ -186,11 +207,15 @@
     let extra = calc.max(0.0, st.label.sep + lw + st.margin - 0.5)
     let x0 = if side == "left" { 0.5 + extra } else { 0.5 }
     let h = if label == none { len } else { calc.max(len, lh + 2 * st.margin) }
+    // The label's side of the wire's width moves with the wire when it is routed.
+    let region = if label == none { none } else if side == "right" { (x0, 1.0 + extra) } else { (0.0, x0) }
     (
       width: 1.0 + extra,
       height: h,
       input-positions: (x0,),
       output-positions: (x0,),
+      in-labels: (region,),
+      out-labels: (region,),
       spans: (),
       draw: (o, in-over: none, out-over: none) => {
         let (ox, oy) = o
@@ -525,6 +550,8 @@
       let (bx, tx) = (nb, nt)
       let ba = ds.map(d => d.kind-in.map(k => if k == 0 { 0 } else { 3 }))
       let ta = ds.map(d => d.kind-out.map(k => if k == 0 { 0 } else { 3 }))
+      let free-in(i, curs, k, x) = _free-x(ls.at(i), dxs.at(i), ls.at(i).in-labels, nb.at(i), curs, k, x)
+      let free-out(i, curs, k, x) = _free-x(ls.at(i), dxs.at(i), ls.at(i).out-labels, nt.at(i), curs, k, x)
 
       // Bottom-up: every flexible slot adopts the x of the slot below it,
       // unless that slot has a weaker claim; a wire hands the x on to its far
@@ -536,7 +563,7 @@
           let claim = _offer(ds.at(i).kind-out.at(k), ta.at(i).at(k))
           if claim > _offer(kb, ba.at(i + 1).at(k)) { continue }
           let x = tx.at(i).at(k)
-          if kb == 1 and not _free-x(ls.at(i + 1), dxs.at(i + 1), nb.at(i + 1).at(k), x) { continue }
+          if not free-in(i + 1, bx.at(i + 1), k, x) { continue }
           bx.at(i + 1).at(k) = x
           ba.at(i + 1).at(k) = claim
           let j = ds.at(i + 1).flex-link.at(k)
@@ -544,7 +571,7 @@
             let kf = ds.at(i + 1).kind-out.at(j)
             let af = ta.at(i + 1).at(j)
             let held = af != 3 and claim >= _offer(kf, af)
-            if kf != 0 and not held and (kf != 1 or _free-x(ls.at(i + 1), dxs.at(i + 1), nt.at(i + 1).at(j), x)) {
+            if kf != 0 and not held and free-out(i + 1, tx.at(i + 1), j, x) {
               tx.at(i + 1).at(j) = x
               ta.at(i + 1).at(j) = claim
             }
@@ -559,7 +586,7 @@
           let claim = _offer(ds.at(i + 1).kind-in.at(k), ba.at(i + 1).at(k))
           if claim > _offer(ka, ta.at(i).at(k)) { continue }
           let x = bx.at(i + 1).at(k)
-          if ka == 1 and not _free-x(ls.at(i), dxs.at(i), nt.at(i).at(k), x) { continue }
+          if not free-out(i, tx.at(i), k, x) { continue }
           tx.at(i).at(k) = x
           ta.at(i).at(k) = claim
           let j = invs.at(i).at(k)
@@ -567,7 +594,7 @@
             let kf = ds.at(i).kind-in.at(j)
             let af = ba.at(i).at(j)
             let held = af != 3 and claim >= _offer(kf, af)
-            if kf != 0 and not held and (kf != 1 or _free-x(ls.at(i), dxs.at(i), nb.at(i).at(j), x)) {
+            if kf != 0 and not held and free-in(i, bx.at(i), j, x) {
               bx.at(i).at(j) = x
               ba.at(i).at(j) = claim
             }
@@ -623,6 +650,8 @@
         height: y,
         input-positions: bx.first(),
         output-positions: tx.last(),
+        in-labels: ls.first().in-labels.map(r => _shift-region(r, dxs.first())),
+        out-labels: ls.last().out-labels.map(r => _shift-region(r, dxs.last())),
         spans: {
           let out = ()
           for (i, l) in ls.enumerate() {
@@ -698,6 +727,8 @@
         height: h,
         input-positions: ls.enumerate().map(((i, l)) => l.input-positions.map(v => v + dxs.at(i))).flatten(),
         output-positions: ls.enumerate().map(((i, l)) => l.output-positions.map(v => v + dxs.at(i))).flatten(),
+        in-labels: ls.enumerate().map(((i, l)) => l.in-labels.map(r => _shift-region(r, dxs.at(i)))).sum(default: ()),
+        out-labels: ls.enumerate().map(((i, l)) => l.out-labels.map(r => _shift-region(r, dxs.at(i)))).sum(default: ()),
         spans: {
           let out = ()
           for (i, l) in ls.enumerate() {

@@ -43,10 +43,10 @@
 #assert.eq(counts(serial(copy, swap, style: (bend: 1))), (1, 2))
 #assert.eq(counts(parallel(wire(), wire(), style: (gap: 1))), (2, 2))
 
-#let cap = primitive(inputs: 0, outputs: 2, width: 2, draw: (st, g) => ())
-#let cup = primitive(inputs: 2, outputs: 0, width: 2, draw: (st, g) => ())
-#assert.eq(counts(cap), (0, 2))
-#assert.eq(counts(serial(parallel(wire(), cap), parallel(cup, wire()))), (1, 1))
+#let cup = primitive(inputs: 0, outputs: 2, width: 2, draw: (st, g) => ())
+#let cap = primitive(inputs: 2, outputs: 0, width: 2, draw: (st, g) => ())
+#assert.eq(counts(cup), (0, 2))
+#assert.eq(counts(serial(parallel(wire(), cup), parallel(cap, wire()))), (1, 1))
 #assert.eq(counts(primitive(inputs: 3, outputs: 1, input-positions: (0.5, 1.5, 2.5), draw: (st, g) => ())), (3, 1))
 
 // Rendering. Sizes are compared with a tolerance, since strokes and padding
@@ -84,11 +84,11 @@
   // beyond the one unit an unlabelled wire has.
   let u = 1cm
   let lab = measure(string-diagram(wire("a long label"), style: (unit: u)))
-  let box = measure(string-diagram(process("f"), style: (unit: u)))
+  let proc = measure(string-diagram(process("f"), style: (unit: u)))
   for side in ("right", "left") {
     let both = measure(string-diagram(parallel(wire("a long label", side: side), process("f")), style: (unit: u)))
     assert(
-      close(both.width, lab.width + box.width - 2 * default-style.padding * u, tolerance: 0.02),
+      close(both.width, lab.width + proc.width - 2 * default-style.padding * u, tolerance: 0.02),
       message: "a parallel neighbour is not placed after a wire label on the " + side,
     )
   }
@@ -98,6 +98,31 @@
   assert(
     close(long.width - plain.width, lw + 2 * default-style.margin * u - u, tolerance: 0.02),
     message: "a sideways wire is not as long as its label",
+  )
+
+  // Routing keeps labels clear. Stacked on a box whose slots are a unit
+  // apart, the wires and arms of the next layer follow the box's slots; one
+  // whose label would then run into a neighbour, or that would run into a
+  // neighbour's label, stays where it is and is carried across a connector
+  // band instead. The unlabelled versions need no band, so the band is
+  // exactly the labelled versions' extra height.
+  let band = default-style.bend * u
+  let wide = process("A very wide process", outputs: 3)
+  let above(top) = measure(string-diagram(serial(wide, top), style: (unit: u))).height
+  assert(
+    close(above(parallel(wire("a long label"), wire(), wire())) - above(parallel(wire(), wire(), wire())), band, tolerance: 0.02),
+    message: "a routed wire runs through a wire label",
+  )
+  let short = box(width: 0.6 * u)
+  assert(
+    close(above(parallel(wire(short), process("f"), wire(short, side: "left"))) - above(parallel(wire(), process("f"), wire())), band, tolerance: 0.02),
+    message: "a routed wire label runs into a box",
+  )
+  let tall = process("A very wide process", inputs: 3)
+  let below(bottom) = measure(string-diagram(serial(bottom, tall), style: (unit: u))).height
+  assert(
+    close(below(parallel(copy, wire("a long label", side: "left"))) - below(parallel(copy, wire())), band, tolerance: 0.02),
+    message: "a routed arm ends in a wire label",
   )
 
   // Style overrides at every level render, in every direction.
