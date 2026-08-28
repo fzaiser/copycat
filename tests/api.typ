@@ -76,18 +76,29 @@
   assert(wide.width > narrow.width * 1.5, message: "a long label does not widen its box")
   assert(close(wide.height, narrow.height), message: "a long label changes the box height")
 
-  // A labelled wire makes room for its label on either side: a parallel
-  // neighbour is placed after the label. Read sideways, the wire is as long
-  // as the label.
-  let lab = measure(string-diagram(wire("a long label")))
-  let box = measure(string-diagram(process("f")))
+  // A labelled wire makes room for its label. Beside it, on either side: a
+  // parallel neighbour is placed after the label, so the composition is as
+  // wide as its two parts, less the canvas padding they no longer have
+  // between them. Along it: read sideways, the wire is as long as the label
+  // plus a margin at each end, so it lengthens the diagram by that much
+  // beyond the one unit an unlabelled wire has.
+  let u = 1cm
+  let lab = measure(string-diagram(wire("a long label"), style: (unit: u)))
+  let box = measure(string-diagram(process("f"), style: (unit: u)))
   for side in ("right", "left") {
-    let both = measure(string-diagram(parallel(wire("a long label", side: side), process("f"))))
-    assert(both.width > lab.width + box.width / 2, message: "a parallel neighbour overlaps a wire label on the " + side)
+    let both = measure(string-diagram(parallel(wire("a long label", side: side), process("f")), style: (unit: u)))
+    assert(
+      close(both.width, lab.width + box.width - 2 * default-style.padding * u, tolerance: 0.02),
+      message: "a parallel neighbour is not placed after a wire label on the " + side,
+    )
   }
-  let plain = measure(string-diagram(serial(process("f"), wire(), process("g")), style: (direction: "right")))
-  let long = measure(string-diagram(serial(process("f"), wire("a long label"), process("g")), style: (direction: "right")))
-  assert(long.width > plain.width * 1.3, message: "a sideways wire does not grow to fit its label")
+  let lw = measure(text("a long label")).width
+  let plain = measure(string-diagram(serial(process("f"), wire(), process("g")), style: (unit: u, direction: "right")))
+  let long = measure(string-diagram(serial(process("f"), wire("a long label"), process("g")), style: (unit: u, direction: "right")))
+  assert(
+    close(long.width - plain.width, lw + 2 * default-style.margin * u - u, tolerance: 0.02),
+    message: "a sideways wire is not as long as its label",
+  )
 
   // Style overrides at every level render, in every direction.
   for dir in ("up", "down", "right", "left") {

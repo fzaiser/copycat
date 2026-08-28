@@ -181,10 +181,11 @@
     let st = resolve-style(env.style)
     let stroke = if stroke == none { no-stroke } else { stroke }
     let ws = use-stroke(if stroke == auto { st.wire.stroke } else { group-style(st, "wire", (stroke: stroke)).stroke })
+    let len = length * 1.0
     let (lw, lh) = if label == none { (0.0, 0.0) } else { _measure(env, st, label) }
     let extra = calc.max(0.0, st.label.sep + lw + st.margin - 0.5)
     let x0 = if side == "left" { 0.5 + extra } else { 0.5 }
-    let h = if label == none { length * 1.0 } else { calc.max(length * 1.0, lh + 2 * st.margin) }
+    let h = if label == none { len } else { calc.max(len, lh + 2 * st.margin) }
     (
       width: 1.0 + extra,
       height: h,
