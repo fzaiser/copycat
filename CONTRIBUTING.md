@@ -23,6 +23,7 @@ It checks that
 - the README's first code block, the quick start, compiles against the package as a user would import it;
 - every `@preview/drawstring:<version>` import in the README and under `docs/` names the version in `typst.toml`;
 - every relative link in the README points at an existing file;
+- the figures in `docs/images/` match their sources, under the Typst release that rendered them;
 - the submission copy assembled by `scripts/stage.sh` passes `typst-package-check`, and the sources pass `typos`.
 
 The last two checks are skipped, with a notice, when the tools are not installed:
@@ -50,7 +51,7 @@ typst watch --root . --package-path tests/out/packages docs/gallery.typ
 `scripts/render-docs.sh` regenerates the README figures and `docs/gallery.pdf`.
 Each figure is one page of a file in `docs/figures/`, wrapped in `fig("name", ...)` from `docs/figures/setup.typ`, and is written to `docs/images/name.svg`.
 The script also adds a style block to every SVG that turns black ink white when the reader's colour scheme is dark, which is why the figures leave boxes and triangles unfilled.
-Run the script after any change that affects the rendered output, and commit the result.
+Run the script after any change that affects the rendered output, and commit the result; under the Typst release that rendered them, the tests fail when the figures are out of date.
 
 ## Using a checkout from other documents
 

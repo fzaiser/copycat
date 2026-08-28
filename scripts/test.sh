@@ -52,6 +52,16 @@ for f in docs/figures/*.typ; do
   compile "$f" "figure-$name" "$f" --package-path "$staged"
 done
 
+# The committed figures must match their sources. Typst's SVG output differs
+# between releases, so only the release that rendered them can tell.
+rendered=$(cat docs/images/typst-version)
+installed=$(typst --version | sed 's/^typst \([0-9.]*\).*/\1/')
+if [ "$installed" = "$rendered" ]; then
+  if err=$(scripts/render-docs.sh --check 2>&1); then ok "docs/images is up to date"; else bad "docs/images" "$err"; fi
+else
+  skipped "docs/images was rendered with typst $rendered, not $installed"
+fi
+
 for f in tests/fail/*.typ; do
   want=$(sed -n '1s#^// error: ##p' "$f")
   if [ -z "$want" ]; then bad "$f" "the first line must be '// error: <expected text>'"; continue; fi
