@@ -1,4 +1,4 @@
-# Contributing to copycat
+# Contributing to drawstring
 
 ## Where things are
 
@@ -21,7 +21,7 @@ It checks that
 - `tests/*.typ`, `docs/*.typ` and `docs/figures/*.typ` compile without warnings;
 - every file in `tests/fail/` fails with the error named on its first line;
 - the README's first code block, the quick start, compiles against the package as a user would import it;
-- every `@preview/copycat:<version>` import in the README and under `docs/` names the version in `typst.toml`;
+- every `@preview/drawstring:<version>` import in the README and under `docs/` names the version in `typst.toml`;
 - every relative link in the README points at an existing file;
 - the submission copy assembled by `scripts/stage.sh` passes `typst-package-check`, and the sources pass `typos`.
 
@@ -37,7 +37,7 @@ CI runs everything on the compiler floor from `typst.toml` and on the current Ty
 
 ## Working on the docs
 
-The files under `docs/` import `@preview/copycat:<version>` rather than `../src/lib.typ`, so that they work unchanged when copied into a document.
+The files under `docs/` import `@preview/drawstring:<version>` rather than `../src/lib.typ`, so that they work unchanged when copied into a document.
 The tests compile them against the submission copy that `scripts/stage.sh` assembles in `tests/out/staged`, so anything missing from that copy fails there.
 
 To work on a document interactively, link the checkout into a package path and pass it to `typst`.
@@ -54,7 +54,7 @@ Run the script after any change that affects the rendered output, and commit the
 
 ## Using a checkout from other documents
 
-`scripts/install-local.sh` links the checkout into Typst's local package directory as `@local/copycat:<version>`, so that other documents on the machine see edits immediately.
+`scripts/install-local.sh` links the checkout into Typst's local package directory as `@local/drawstring:<version>`, so that other documents on the machine see edits immediately.
 
 ## Releasing
 

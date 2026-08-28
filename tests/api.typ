@@ -2,11 +2,11 @@
 // internal fields, so that they survive changes to the drawing code.
 
 #import "../src/lib.typ": *
-#import "../src/lib.typ" as copycat
+#import "../src/lib.typ" as drawstring
 #import "@preview/cetz:0.5.2": draw
 
 // The exported surface is exactly the documented one, and nothing leaks.
-#let exported = dictionary(copycat).keys().sorted()
+#let exported = dictionary(drawstring).keys().sorted()
 #assert.eq(
   exported,
   ("bundle", "copy", "default-style", "discard", "effect", "parallel", "primitive", "process", "serial", "state", "string-diagram", "styled", "swap", "unbundle", "wire"),

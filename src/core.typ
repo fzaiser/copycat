@@ -1,4 +1,4 @@
-// Implementation of copycat. Only `lib.typ` is public, so nothing here needs
+// Implementation of drawstring. Only `lib.typ` is public, so nothing here needs
 // to be safe to import with a wildcard.
 //
 // Diagrams are laid out bottom to top: inputs enter at the bottom edge and

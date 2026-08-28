@@ -1,10 +1,10 @@
-#import "@preview/copycat:0.1.0": copy, discard, state, effect, primitive, bundle, process, serial, unbundle, string-diagram, styled, swap, parallel, wire
+#import "@preview/drawstring:0.1.0": copy, discard, state, effect, primitive, bundle, process, serial, unbundle, string-diagram, styled, swap, parallel, wire
 
 #set page(width: 16cm, height: auto, margin: 1.2cm)
 #set text(size: 11pt)
 #set par(justify: false)
 
-= copycat gallery
+= drawstring gallery
 
 A kernel $f : X arrow.squiggly Y$, and sequential composition:
 

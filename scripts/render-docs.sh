@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Renders the README figures and the gallery PDF. The docs import copycat as a
+# Renders the README figures and the gallery PDF. The docs import drawstring as a
 # package, so the checkout is linked into a package path first.
 #
 # Every page of a docs/figures/*.typ file is one figure, named by its
@@ -9,8 +9,8 @@ set -eu
 cd "$(dirname "$0")/.."
 version=$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)
 pkg=tests/out/packages
-mkdir -p "$pkg/preview/copycat"
-ln -sfn "$PWD" "$pkg/preview/copycat/$version"
+mkdir -p "$pkg/preview/drawstring"
+ln -sfn "$PWD" "$pkg/preview/drawstring/$version"
 opts=(--root . --package-path "$pkg")
 
 # Shown through <img>, as on GitHub and Typst Universe, an SVG still applies

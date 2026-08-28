@@ -6,7 +6,7 @@
 // that turns black ink white when the reader's colour scheme is dark, which is
 // why boxes and triangles are left unfilled here.
 
-#import "@preview/copycat:0.1.0": *
+#import "@preview/drawstring:0.1.0": *
 
 /// Page and text setup: `#show: setup`.
 #let setup(body) = {

@@ -1,6 +1,6 @@
 # Architecture
 
-How copycat turns a term such as `serial(copy, parallel(discard, wire()))` into a drawing.
+How drawstring turns a term such as `serial(copy, parallel(discard, wire()))` into a drawing.
 This is a guide to the implementation in `src/`, for changing the library; the [README](README.md) documents how to use it.
 
 ## The pipeline

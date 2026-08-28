@@ -1,4 +1,4 @@
-// Public interface of copycat. Documents import this file; the implementation
+// Public interface of drawstring. Documents import this file; the implementation
 // lives in the other files of this directory and is not part of the interface.
 
 #import "style.typ": default-style

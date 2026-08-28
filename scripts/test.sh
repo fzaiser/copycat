@@ -40,11 +40,11 @@ version=$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)
 
 for f in tests/*.typ; do compile "$f" "$(basename "${f%.typ}")" "$f"; done
 
-# The docs and the README import copycat as a package. They are compiled against
+# The docs and the README import drawstring as a package. They are compiled against
 # the submission copy, so that anything stage.sh leaves out fails here.
 staged=$out/staged
 rm -rf "$staged"
-if err=$(scripts/stage.sh "$staged/preview/copycat/$version" 2>&1); then ok "scripts/stage.sh"; else bad "scripts/stage.sh" "$err"; fi
+if err=$(scripts/stage.sh "$staged/preview/drawstring/$version" 2>&1); then ok "scripts/stage.sh"; else bad "scripts/stage.sh" "$err"; fi
 for f in docs/*.typ; do compile "$f" "$(basename "${f%.typ}")" "$f" --package-path "$staged"; done
 for f in docs/figures/*.typ; do
   name=$(basename "${f%.typ}")
@@ -67,11 +67,11 @@ done
 awk '/^```typst/ { if (++n == 1) { on = 1; next } } /^```$/ { on = 0 } on' README.md > "$out/readme-quickstart.typ"
 compile "README quick start" readme-quickstart "$out/readme-quickstart.typ" --package-path "$staged"
 
-imports=$(grep -ohE '@preview/copycat:[0-9]+\.[0-9]+\.[0-9]+' README.md docs/*.typ docs/figures/*.typ | sort -u)
-if [ "$imports" = "@preview/copycat:$version" ]; then
-  ok "README and docs import copycat $version"
+imports=$(grep -ohE '@preview/drawstring:[0-9]+\.[0-9]+\.[0-9]+' README.md docs/*.typ docs/figures/*.typ | sort -u)
+if [ "$imports" = "@preview/drawstring:$version" ]; then
+  ok "README and docs import drawstring $version"
 else
-  bad "imports" "README.md and docs/ must import copycat $version, found:"$'\n'"$imports"
+  bad "imports" "README.md and docs/ must import drawstring $version, found:"$'\n'"$imports"
 fi
 
 # Relative links in the README must exist in the checkout; stage.sh turns the
@@ -84,7 +84,7 @@ if [ -z "$missing" ]; then ok "README links resolve"; else bad "README links" "n
 # The lint runs after the compiles above: typst-package-check resolves cetz
 # from the package cache only, which they fill on a fresh machine.
 if command -v typst-package-check >/dev/null; then
-  if err=$(typst-package-check check $offline "$staged/preview/copycat/$version" 2>&1); then ok "typst-package-check"; else bad "typst-package-check" "$err"; fi
+  if err=$(typst-package-check check $offline "$staged/preview/drawstring/$version" 2>&1); then ok "typst-package-check"; else bad "typst-package-check" "$err"; fi
 else
   skipped "typst-package-check is not installed (cargo install --git https://github.com/typst/package-check --locked)"
 fi

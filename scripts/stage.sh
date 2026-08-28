@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Assembles the submission copy of the package, i.e. the directory that goes
-# into packages/preview/copycat/<version> of the typst/packages repository. It
+# into packages/preview/drawstring/<version> of the typst/packages repository. It
 # holds the shipped files only; the docs and the other development files stay
 # behind, and the README's links to them are pointed at the tag v<version> in
 # the repository, so that they work on Typst Universe.

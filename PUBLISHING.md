@@ -1,15 +1,15 @@
-# Publishing copycat to Typst Universe
+# Publishing drawstring to Typst Universe
 
 Packages live in the [typst/packages](https://github.com/typst/packages) repository under `packages/preview/<name>/<version>/` and are imported as `@preview/<name>:<version>`.
-The authoritative rules are in that repository's [docs/](https://github.com/typst/packages/tree/main/docs); this file is what they mean for copycat, so that a release does not have to re-derive them.
+The authoritative rules are in that repository's [docs/](https://github.com/typst/packages/tree/main/docs); this file is what they mean for drawstring, so that a release does not have to re-derive them.
 
 ## Checklist
 
-1. Set `version` in `typst.toml` and in every `@preview/copycat:` import in `README.md` and under `docs/`.
+1. Set `version` in `typst.toml` and in every `@preview/drawstring:` import in `README.md` and under `docs/`.
    `scripts/test.sh` fails on a mismatch.
 2. Run `scripts/render-docs.sh`, then `scripts/test.sh` with `typst-package-check` and `typos` installed, so that nothing is skipped.
 3. Check `authors` and `repository` in `typst.toml`, and the holder and year in `LICENSE`.
-4. Commit, tag and push: `git tag -a v<version> -m "copycat <version>"`.
+4. Commit, tag and push: `git tag -a v<version> -m "drawstring <version>"`.
    The staged README links to this tag, so it has to be on GitHub before the package goes live.
 
 ## Submitting
@@ -19,7 +19,7 @@ A sparse checkout of a fork keeps the registry clone small:
 ```sh
 git clone --depth 1 --no-checkout --filter="tree:0" git@github.com:<you>/packages
 cd packages && git sparse-checkout init
-git sparse-checkout set packages/preview/copycat
+git sparse-checkout set packages/preview/drawstring
 git remote add upstream git@github.com:typst/packages
 git config remote.upstream.partialclonefilter tree:0
 git checkout main
@@ -28,7 +28,7 @@ git checkout main
 Then assemble the submission into a new versioned directory (note the doubled `packages/`), commit it and open a pull request against `typst/packages`:
 
 ```sh
-<copycat checkout>/scripts/stage.sh packages/preview/copycat/<version>
+<drawstring checkout>/scripts/stage.sh packages/preview/drawstring/<version>
 ```
 
 `scripts/stage.sh` copies the shipped files only.

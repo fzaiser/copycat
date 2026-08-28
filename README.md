@@ -1,11 +1,11 @@
-# copycat
+# drawstring
 
 String diagrams for Markov categories, and more generally for monoidal categories with copying and discarding, as a [Typst](https://typst.app) package.
-You write a diagram as a term, such as `serial(copy, parallel(discard, wire()))`, and copycat lays it out in the style of Fritz (2020) and Cho–Jacobs (2019), drawing with [CeTZ](https://typst.app/universe/package/cetz).
+You write a diagram as a term, such as `serial(copy, parallel(discard, wire()))`, and drawstring lays it out in the style of Fritz (2020) and Cho–Jacobs (2019), drawing with [CeTZ](https://typst.app/universe/package/cetz).
 
-![Three diagrams drawn with copycat: a camera whose photo is kept and also described in text, the law that copying and then discarding one copy is the identity, and copying a product wire](docs/images/overview.svg)
+![Three diagrams drawn with drawstring: a camera whose photo is kept and also described in text, the law that copying and then discarding one copy is the identity, and copying a product wire](docs/images/overview.svg)
 
-- **Terms, not coordinates.** Wires, boxes, states and effects are composed in series and in parallel; copycat places every element and routes the wires between them.
+- **Terms, not coordinates.** Wires, boxes, states and effects are composed in series and in parallel; drawstring places every element and routes the wires between them.
 - **Made for equations.** A diagram is content whose centre sits on the math axis, so `$ #string-diagram(a) = #string-diagram(b) $` reads as an equation.
 - **Styling at three levels:** the whole diagram, a sub-diagram, or a single element.
 - **Four reading directions:** bottom to top by default, or top to bottom, left to right and right to left.
@@ -14,7 +14,7 @@ You write a diagram as a term, such as `serial(copy, parallel(discard, wire()))`
 ## Quick start
 
 ```typst
-#import "@preview/copycat:0.1.0": *
+#import "@preview/drawstring:0.1.0": *
 
 $ #string-diagram(serial(
     state("Camera"),
@@ -67,7 +67,7 @@ Some variants:
 | `process("Describe")` | ![a box that has grown to fit the label Describe](docs/images/process-wide.svg) |
 
 A note on names:
-- `state` shadows Typst's builtin, which stays reachable as `std.state`; to keep the builtin, import selectively and rename, as in `#import "@preview/copycat:0.1.0": serial, parallel, wire, state as dist`.
+- `state` shadows Typst's builtin, which stays reachable as `std.state`; to keep the builtin, import selectively and rename, as in `#import "@preview/drawstring:0.1.0": serial, parallel, wire, state as dist`.
 - The renderer is called `string-diagram` rather than `diagram`, which fletcher and lilaq already export; alias it with `#let sd = string-diagram` if you prefer the short name.
 
 ## Composing diagrams
@@ -349,7 +349,7 @@ $ #string-diagram(serial(
 - `draw(style, geometry)` returns CeTZ elements.
   It draws in units, with the origin at the bottom-left corner of the element.
 - `style` is the fully resolved style, so `style.wire.stroke`, `style.box.fill` or `style.dot.radius` can be handed to CeTZ as they are.
-  Import the same CeTZ version as copycat does.
+  Import the same CeTZ version as drawstring does.
 - `geometry` holds the element's `width`, `height`, `input-positions` and `output-positions`, and a `measure` function.
 - The element is `width` × `height` units; by default it is one unit tall and as wide as its larger wire count.
   Its wire ends are spread evenly along its edges unless `input-positions` and `output-positions` say otherwise.
@@ -364,5 +364,5 @@ $ #string-diagram(serial(
 - **Gallery**: [docs/gallery.typ](docs/gallery.typ) shows the whole repertoire in one document, with examples from probability theory; [docs/gallery.pdf](docs/gallery.pdf) is its output.
 - **Requirements**: Typst 0.14 or newer.
 - **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md) explains how to run the tests and regenerate the figures, and [ARCHITECTURE.md](ARCHITECTURE.md) how the layout works.
-- **AI assistance**: copycat was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
+- **AI assistance**: drawstring was developed with the help of AI coding assistants (Claude Code and OpenAI Codex) under close human review.
 - **License**: MIT, see [LICENSE](LICENSE).
