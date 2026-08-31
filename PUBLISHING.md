@@ -31,8 +31,9 @@ Then assemble the submission into a new versioned directory (note the doubled `p
 <drawstring checkout>/scripts/stage.sh packages/preview/drawstring/<version>
 ```
 
-`scripts/stage.sh` copies the shipped files only.
+`scripts/stage.sh` copies the shipped files only — `typst.toml`, `LICENSE`, `README.md` and `src/` — and requires every other file to be on `typst.toml`'s exclude list, so a new file cannot fall between the two.
 The README's links to anything else, such as the figures and the gallery, are rewritten to point at the tag `v<version>` in the repository, so that they work on Typst Universe.
+The rewrite handles plain inline `](target)` links only; staging also fails on a relative link to a missing file, a ` ```typst ` fence that is not at column 0, and an `@preview` reference that is not exactly this package at the manifest version or src's pinned cetz.
 Copy files only, never a `.git` directory; submodules are not accepted.
 Once the pull request is merged and CI has run, the version can be imported right away and shows up on Universe within about half an hour.
 

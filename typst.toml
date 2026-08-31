@@ -12,6 +12,6 @@ disciplines = ["mathematics", "computer-science"]
 # The floor of cetz 0.5.2, which drawstring imports.
 compiler = "0.14.0"
 # Development files, which are not part of the package. scripts/stage.sh
-# assembles the submission without them and points the README's links at the
-# repository instead.
-exclude = ["/docs", "/tests", "/scripts", "/.github", "/ARCHITECTURE.md", "/CONTRIBUTING.md", "/PUBLISHING.md", "/.typos.toml"]
+# ships an explicit allowlist, requires everything else to be listed here,
+# and points the README's links to unshipped files at the repository.
+exclude = ["/docs", "/tests", "/scripts", "/.github", "/.gitignore", "/AGENTS.md", "/ARCHITECTURE.md", "/CONTRIBUTING.md", "/PUBLISHING.md", "/.typos.toml"]

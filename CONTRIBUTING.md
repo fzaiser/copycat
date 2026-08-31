@@ -20,16 +20,15 @@ It checks that
 
 - `tests/*.typ`, `docs/*.typ` and `docs/figures/*.typ` compile without warnings;
 - every file in `tests/fail/` fails with the error named on its first line;
-- the README's first code block, the quick start, compiles against the package as a user would import it;
-- every `@preview/drawstring:<version>` import in the README and under `docs/` names the version in `typst.toml`;
-- every relative link in the README points at an existing file;
+- every ` ```typst ` block in the README, concatenated in order, compiles against the package as a user would import it;
+- staging validates the submission: every file is either shipped or on `typst.toml`'s exclude list, every `@preview/` reference in the README and under `docs/` is exactly this package at the manifest version (or src's pinned cetz), every relative link in the README points at an existing file, and every ` ```typst ` fence is in the canonical column-0 form;
 - `docs/images/` and `docs/gallery.pdf` match their sources, under the Typst release recorded in `docs/typst-version`;
 - the submission copy assembled by `scripts/stage.sh` passes `typst-package-check`, and the sources pass `typos`.
 
 The last two checks are skipped, with a notice, when the tools are not installed:
 
 ```sh
-cargo install --git https://github.com/typst/package-check --locked
+cargo install --git https://github.com/typst/package-check --rev 50eb19311fde --locked   # the rev CI pins
 brew install typos-cli   # or: cargo install typos-cli
 ```
 

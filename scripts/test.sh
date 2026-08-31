@@ -41,7 +41,8 @@ version=$(sed -n 's/^version = "\(.*\)"/\1/p' typst.toml)
 for f in tests/*.typ; do compile "$f" "$(basename "${f%.typ}")" "$f"; done
 
 # The docs and the README import drawstring as a package. They are compiled against
-# the submission copy, so that anything stage.sh leaves out fails here.
+# the submission copy, so that anything stage.sh leaves out fails here. Staging also
+# validates the README (links, fences, @preview references), so a violation fails here.
 staged=$out/staged
 rm -rf "$staged"
 if err=$(scripts/stage.sh "$staged/preview/drawstring/$version" 2>&1); then ok "scripts/stage.sh"; else bad "scripts/stage.sh" "$err"; fi
@@ -77,29 +78,31 @@ for f in tests/fail/*.typ; do
   fi
 done
 
-awk '/^```typst/ { if (++n == 1) { on = 1; next } } /^```$/ { on = 0 } on' README.md > "$out/readme-quickstart.typ"
-compile "README quick start" readme-quickstart "$out/readme-quickstart.typ" --package-path "$staged"
-
-imports=$(grep -ohE '@preview/drawstring:[0-9]+\.[0-9]+\.[0-9]+' README.md docs/*.typ docs/figures/*.typ | sort -u)
-if [ "$imports" = "@preview/drawstring:$version" ]; then
-  ok "README and docs import drawstring $version"
+# Every README ```typst example, concatenated in order (later ones build on
+# earlier ones), must compile against the submission copy. An example with no
+# `#` line is a bare expression shown for its shape; it is bound with a #let
+# so it is still evaluated rather than typeset as text.
+if awk '
+  /^```typst$/ { if (on) exit 1; on = 1; bare = 1; n++; m = 0; next }
+  /^```$/ && on { on = 0
+    if (n > 1) print ""
+    if (bare) print "#let readme-example-" n " = ("
+    for (i = 1; i <= m; i++) print line[i]
+    if (bare) print ")" }
+  on { line[++m] = $0; if ($0 ~ /^#/) bare = 0 }
+  END { if (on || n == 0) exit 1 }
+' README.md > "$out/readme-examples.typ"; then
+  compile "README examples" readme-examples "$out/readme-examples.typ" --package-path "$staged"
 else
-  bad "imports" "README.md and docs/ must import drawstring $version, found:"$'\n'"$imports"
+  bad "README examples" 'README.md must have ```typst fences, each closed by ``` at column 0'
 fi
-
-# Relative links in the README must exist in the checkout; stage.sh turns the
-# ones that are not part of the package into repository links.
-missing=$(grep -oE '\]\([^)#:[:space:]]+\)' README.md | sed 's/^](//; s/)$//' | sort -u | while read -r path; do
-  [ -e "$path" ] || echo "$path"
-done)
-if [ -z "$missing" ]; then ok "README links resolve"; else bad "README links" "not found:"$'\n'"$missing"; fi
 
 # The lint runs after the compiles above: typst-package-check resolves cetz
 # from the package cache only, which they fill on a fresh machine.
 if command -v typst-package-check >/dev/null; then
   if err=$(typst-package-check check $offline "$staged/preview/drawstring/$version" 2>&1); then ok "typst-package-check"; else bad "typst-package-check" "$err"; fi
 else
-  skipped "typst-package-check is not installed (cargo install --git https://github.com/typst/package-check --locked)"
+  skipped "typst-package-check is not installed (cargo install --git https://github.com/typst/package-check --rev 50eb19311fde --locked)"
 fi
 
 if command -v typos >/dev/null; then

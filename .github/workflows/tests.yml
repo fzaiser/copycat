@@ -17,15 +17,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The manifest's compiler floor and the current release.
-        typst: ["0.14.0", "0.15.1"]
+        typst: [floor, latest]
     steps:
       - uses: actions/checkout@v7
+      # "floor" is the manifest's compiler floor, read from typst.toml so the
+      # two cannot drift; "latest" is whatever release users currently install.
+      - id: version
+        run: |
+          if [ "${{ matrix.typst }}" = floor ]; then
+            echo "typst=$(sed -n 's/^compiler = "\(.*\)"/\1/p' typst.toml)" >> "$GITHUB_OUTPUT"
+          else
+            echo "typst=latest" >> "$GITHUB_OUTPUT"
+          fi
       - uses: typst-community/setup-typst@v5
         with:
-          typst-version: ${{ matrix.typst }}
+          typst-version: ${{ steps.version.outputs.typst }}
       - name: Install typst-package-check
-        run: cargo install --git https://github.com/typst/package-check --locked
+        # Pinned so upstream lint changes cannot break CI at a random moment;
+        # bump the rev deliberately.
+        run: cargo install --git https://github.com/typst/package-check --rev 50eb19311fde --locked
       - name: Run the test suite
         run: scripts/test.sh
 

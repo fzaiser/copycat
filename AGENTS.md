@@ -11,4 +11,4 @@ Documentation is written for human readers, who grok a picture plus a code snipp
 - The code belongs in the Markdown next to the figure — copyable, with nested calls indented — never inside the rendered image.
 - Order sections by what a library user needs first, e.g. styling before custom primitives.
 - README examples must make sense without a probability background: the running example is a camera whose photo is kept and described in text, not `Uniform`/`Bernoulli`.
-- Contributor material stays in the top-level files (`ARCHITECTURE.md`, `CONTRIBUTING.md`, `PUBLISHING.md`); the README links to them with relative paths, which `scripts/stage.py` rewrites to tag URLs for Typst Universe.
+- Contributor material stays in the top-level files (`ARCHITECTURE.md`, `CONTRIBUTING.md`, `PUBLISHING.md`); the README links to them with relative paths, which `scripts/stage.sh` rewrites to tag URLs for Typst Universe.
